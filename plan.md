@@ -1,0 +1,380 @@
+# RunStreak — Project Plan (LIVE)
+
+> **Last updated:** 2026-06-22
+> **Current focus:** Phase 0 — Project Scaffolding
+> **Overall status:** 🚧 Planning complete, ready to begin scaffolding
+
+This file is the single source of truth for what's done, what's in progress, and what's next. Agents must read it at the start of every session and update it at the end.
+
+---
+
+## Phase 0 — Project Scaffolding & DevOps Foundation
+
+**Goal:** Get both projects compiling, configured, and ready for feature development.
+
+- [ ] Initialize .NET 10 Web API project (`backend/RunStreak.Api/`)
+  - Nullable reference types enabled
+  - `appsettings.Example.json` with placeholder keys (JWT secret, connection string, CORS origin)
+  - `appsettings.Development.json` in `.gitignore`
+  - Scalar configured for OpenAPI docs (NOT Swagger UI)
+- [ ] Initialize xUnit test project (`backend/RunStreak.Tests/`)
+- [ ] Initialize React + TypeScript project with Vite (`frontend/`)
+  - Vite, not CRA
+- [ ] Install and configure Tailwind CSS in the frontend
+- [ ] Install core frontend dependencies: `zustand`, `react-router-dom`
+- [ ] Set up frontend folder structure:
+  - `src/stores/` (Zustand stores)
+  - `src/api/` (typed API client)
+  - `src/components/`
+  - `src/pages/`
+  - `src/hooks/`
+  - `src/types/`
+- [ ] Verify both projects build cleanly
+- [ ] Initial commit with project skeleton
+
+---
+
+## Phase 1 — Backend: Data Model, Auth & Security
+
+**Goal:** Establish the database schema, implement the full auth flow (split-storage JWT), and wire up security middleware. This is the foundation everything else builds on.
+
+### 1A — Data Model & Database
+
+- [ ] Define EF Core entities:
+  - `User` (Id, Username, Email, PasswordHash, DisplayName, AvatarUrl, TotalPoints, CurrentStreak, LongestStreak, TotalDistanceKm, TotalRuns, CreatedAt, UpdatedAt)
+  - `Run` (Id, UserId, DistanceKm, DurationMinutes, RunDate, Notes, PointsEarned, PaceMinPerKm, CreatedAt, UpdatedAt)
+  - `Badge` (Id, Name, Description, IconUrl, Category, CriteriaJson, PointsReward, CreatedAt)
+  - `UserBadge` (Id, UserId, BadgeId, UnlockedAt)
+  - `RefreshToken` (Id, UserId, TokenHash, ExpiresAt, CreatedAt, RevokedAt, ReplacedByTokenHash)
+- [ ] Create `AppDbContext` with relationships and constraints
+- [ ] Generate initial EF Core migration
+- [ ] Provision Azure SQL Database (Free offer tier — 100k vCore-seconds/month, 32GB)
+- [ ] Apply migration to Azure SQL, verify cold-start tolerance
+- [ ] Create and commit `specs/01-data-model.md`
+
+### 1B — Authentication (Split-Storage JWT)
+
+- [ ] Implement `AuthService`:
+  - User registration (validate input → hash password → create user → issue tokens)
+  - User login (validate credentials → issue tokens)
+  - Token refresh (validate refresh cookie → rotate → issue new pair)
+  - Logout (revoke refresh token)
+- [ ] Password hashing via `PasswordHasher<User>` (PBKDF2, ASP.NET Core Identity)
+- [ ] Access token: short-lived (15 min), signed with key from config, includes `sub`, `iss`, `aud`, `exp`
+- [ ] Refresh token: rotate-on-use, stored hashed (SHA-256) in `RefreshTokens` table
+  - Set as `HttpOnly`, `Secure`, `SameSite=Strict` cookie, `Path=/api/auth/refresh`
+- [ ] Double-submit CSRF token:
+  - On login/refresh: server sets non-HttpOnly `csrf_token` cookie
+  - Frontend reads cookie, echoes as `X-CSRF-Token` header on refresh calls
+  - Server validates header matches cookie
+- [ ] CORS: explicit allow-list (Vercel origin only), `AllowCredentials()`, no wildcard
+- [ ] JWT validation middleware: validate `iss`, `aud`, `exp` on every protected request
+- [ ] Create ADR: `specs/decisions/001-split-storage-jwt.md`
+
+### 1C — Rate Limiting & Data Validation
+
+- [ ] ASP.NET Core rate-limiting middleware:
+  - `/api/auth/login` — fixed window, e.g. 5 attempts / 15 min per IP
+  - `/api/runs` (POST) — sliding window, e.g. 10 submissions / hour per user
+- [ ] Data validation via Data Annotations on all DTOs:
+  - Reject negative distances, durations
+  - Reject future run dates
+  - Enforce max string lengths, required fields
+  - Reject oversized payloads
+- [ ] Create ADR: `specs/decisions/002-rate-limiting-strategy.md`
+
+---
+
+## Phase 2 — Backend: CRUD & Gamification Engine
+
+**Goal:** Implement the core domain logic — run management, points, streaks, badges, and leaderboard.
+
+### 2A — Run Management (CRUD)
+
+- [ ] `RunsController` / service layer:
+  - `POST /api/runs` — log a run (auto-calculates points, updates user stats)
+  - `GET /api/runs` — list user's runs (paginated, sortable)
+  - `GET /api/runs/{id}` — get a single run
+  - `PUT /api/runs/{id}` — update a run (recalculate points)
+  - `DELETE /api/runs/{id}` — delete a run (recalculate points, check badge revocation)
+- [ ] DTOs for all run operations (never expose EF entities)
+
+### 2B — Gamification Rule Engine
+
+- [ ] `PointsService`:
+  - Base points per run (e.g. 10 pts)
+  - Distance bonus (e.g. 5 pts per km)
+  - Streak multiplier (e.g. 1.5× if streak ≥ 7 days)
+  - Configurable rules, not hardcoded magic numbers
+- [ ] `StreakService`:
+  - Calculate current streak (consecutive days with a logged run)
+  - Calculate longest streak
+  - Detect streak break (reset current streak)
+  - Update user's `CurrentStreak` and `LongestStreak` on each run CRUD op
+- [ ] `BadgeService`:
+  - Check badge unlock conditions after each run (first run, 7-day streak, 50km total, etc.)
+  - Seed initial badge definitions (migration or startup seeder)
+  - Return newly unlocked badges in run-logging response
+- [ ] `LeaderboardService`:
+  - `GET /api/leaderboard` — top users by points (paginated)
+  - `GET /api/leaderboard?type=streaks` — top users by current streak
+  - Include rank, display name, avatar, points, streak
+
+### 2C — User Profile & Stats
+
+- [ ] `UsersController`:
+  - `GET /api/users/me` — current user profile + stats
+  - `PUT /api/users/me` — update display name, avatar
+  - `GET /api/users/{id}/badges` — user's unlocked badges
+  - `GET /api/users/{id}/stats` — aggregated run stats (total distance, avg pace, runs per week)
+
+---
+
+## Phase 3 — Backend Testing
+
+**Goal:** Achieve meaningful test coverage on the highest-value, most bug-prone logic.
+
+- [ ] Gamification rule engine tests (highest priority):
+  - Points calculation (base, distance bonus, streak multiplier)
+  - Streak calculation (consecutive days, reset on gap, longest streak tracking)
+  - Badge unlocking (condition evaluation, no duplicate unlock)
+- [ ] Auth service tests:
+  - Registration (happy path, duplicate email, weak password)
+  - Login (valid, invalid credentials)
+  - Token refresh (valid, expired, revoked, reuse detection)
+- [ ] Controller/integration tests with `WebApplicationFactory`:
+  - Runs CRUD (auth required, validation, pagination)
+  - Leaderboard (correct ordering, pagination)
+- [ ] Data validation tests (reject invalid inputs at DTO level)
+
+---
+
+## Phase 4 — Frontend: Core Infrastructure
+
+**Goal:** Set up the foundational frontend architecture — stores, API client, auth flow, theme, routing, and layout.
+
+### 4A — Zustand Stores & API Client
+
+- [ ] `src/stores/authStore.ts` — access token (in memory), user profile, login/logout/refresh actions
+- [ ] `src/stores/themeStore.ts` — light/dark mode, persisted to localStorage
+- [ ] `src/stores/runStore.ts` — runs list, pagination, CRUD actions
+- [ ] `src/stores/gamificationStore.ts` — points, streak, badges, leaderboard
+- [ ] `src/api/client.ts` — Axios/fetch wrapper:
+  - Auto-attach `Authorization: Bearer` header from authStore
+  - Auto-refresh on 401 (call refresh endpoint, retry original request)
+  - Read `csrf_token` cookie and send as `X-CSRF-Token` header on refresh calls
+  - `withCredentials: true` for cookie-based refresh endpoint
+
+### 4B — Theme Switching (Scored Advanced Requirement)
+
+- [ ] Implement dark/light mode toggle
+- [ ] Persist preference to localStorage via themeStore
+- [ ] Apply theme via Tailwind `dark:` variant (class strategy)
+- [ ] Respect system preference on first visit (`prefers-color-scheme`)
+- [ ] Smooth transition between themes
+
+### 4C — Auth Pages & Flow
+
+- [ ] Login page
+- [ ] Registration page
+- [ ] Protected route wrapper (redirect to login if no token)
+- [ ] Silent refresh on app mount (attempt refresh, restore session)
+- [ ] Logout (clear in-memory token, call backend logout endpoint)
+
+### 4D — Layout & Routing
+
+- [ ] React Router setup with routes:
+  - `/` — landing / dashboard (protected)
+  - `/login`, `/register` — auth pages
+  - `/runs` — run history
+  - `/runs/new` — log a run
+  - `/badges` — achievements gallery
+  - `/leaderboard` — leaderboard
+  - `/profile` — user settings
+- [ ] App shell: responsive navbar, sidebar (desktop), bottom nav (mobile), footer
+- [ ] 404 page
+
+---
+
+## Phase 5 — Frontend: Feature Pages & UI
+
+**Goal:** Build out all user-facing pages with polished, responsive UI.
+
+### 5A — Dashboard
+
+- [ ] Current streak display (with streak-fire animation / visual urgency)
+- [ ] Points total & recent points earned
+- [ ] Quick "Log a Run" CTA
+- [ ] Recent runs summary (last 5)
+- [ ] Recently unlocked badges
+- [ ] Weekly distance chart (simple bar or sparkline)
+
+### 5B — Run Logging & History
+
+- [ ] Run logging form (distance, duration, date, notes)
+  - Client-side validation matching backend rules
+  - Success feedback with points earned + any badges unlocked
+- [ ] Run history list (paginated, sortable by date/distance/duration)
+- [ ] Individual run detail view
+- [ ] Edit/delete run with confirmation
+
+### 5C — Badges & Achievements
+
+- [ ] Badge gallery grid (all badges, locked ones greyed out)
+- [ ] Badge detail modal (name, description, unlock date or criteria to unlock)
+- [ ] "New badge unlocked!" toast/notification
+- [ ] Progress indicators for partially-complete badges
+
+### 5D — Leaderboard
+
+- [ ] Leaderboard table/list (rank, avatar, name, points, streak)
+- [ ] Toggle between points and streak rankings
+- [ ] Highlight current user's position
+- [ ] Pagination or infinite scroll
+
+### 5E — Profile & Settings
+
+- [ ] User stats overview (total runs, total distance, avg pace, join date)
+- [ ] Edit display name, avatar
+- [ ] Theme toggle (also accessible from navbar)
+- [ ] Change password
+
+---
+
+## Phase 6 — Frontend Testing
+
+**Goal:** Cover key components and Zustand store logic with Vitest + React Testing Library.
+
+- [ ] Zustand store tests:
+  - authStore (login, logout, token management)
+  - themeStore (toggle, persistence, system preference)
+  - runStore (CRUD actions, pagination state)
+  - gamificationStore (points, streak, badge state)
+- [ ] Component tests:
+  - Run logging form (validation, submission)
+  - Leaderboard (rendering, ranking)
+  - Streak display (visual states: active, broken, milestone)
+  - Badge unlock UI (locked vs unlocked states)
+  - Theme toggle (mode switching)
+
+---
+
+## Phase 7 — Visual Polish & Responsive Design
+
+**Goal:** Ensure the app looks polished, professional, and works well on both desktop and mobile. The assessment rubric explicitly scores visual appeal.
+
+- [ ] Design system: consistent colour palette, typography (Google Font), spacing
+- [ ] Responsive layout pass: test on 320px, 768px, 1024px, 1440px breakpoints
+- [ ] Animations & micro-interactions:
+  - Streak fire animation
+  - Badge unlock celebration (confetti / glow)
+  - Points increment counter
+  - Smooth page transitions
+- [ ] Loading states and skeleton screens
+- [ ] Error states with clear messaging
+- [ ] Empty states with helpful CTAs ("No runs yet — log your first!")
+- [ ] Favicon and app metadata (title, meta description)
+
+---
+
+## Phase 8 — Deployment
+
+**Goal:** Get the app live on Vercel (frontend) and Azure (backend).
+
+- [ ] Backend deployment to Azure App Service (F1 Free or B1 Basic):
+  - Configure connection string via Azure App Service Configuration (not in code)
+  - Configure JWT signing key via App Service Configuration
+  - Configure CORS allowed origin (Vercel URL)
+  - Verify Scalar API docs accessible at `/scalar/v1`
+- [ ] Frontend deployment to Vercel (Hobby tier):
+  - Set backend API URL as environment variable
+  - Verify build succeeds on Vercel
+  - Test full auth flow against Azure backend
+- [ ] Smoke test on production:
+  - Register → login → log run → check points/streak → view leaderboard → logout
+  - Verify refresh token flow works cross-origin
+  - Verify CSRF token flow works
+- [ ] Update README with live deployment URLs
+
+---
+
+## Phase 9 — Stretch Goals (time permitting)
+
+> **Reminder:** Only 3 advanced features are scored. These are extras for portfolio depth. Do NOT claim them in the README's scored checklist unless swapping one of the 3 above.
+
+### 9A — WebSockets (real-time leaderboard)
+
+- [ ] SignalR hub for leaderboard updates (check Azure free tier: SignalR Service free tier = 20 concurrent connections, 20k messages/day — sufficient for demo)
+- [ ] Frontend: live-updating leaderboard when another user submits a run
+- [ ] Auth: attach in-memory access token during SignalR handshake
+
+### 9B — Performance Tests, Logging & Metrics
+
+- [ ] Backend: structured logging with Serilog
+- [ ] Application Insights (free tier: 5GB/month ingest, or use the new free basic tier)
+- [ ] Simple load test with `dotnet-httprepl` or k6
+- [ ] Frontend: performance monitoring (web vitals)
+
+### 9C — Multiplayer Functionality
+
+- [ ] Group challenges: create a challenge, invite users, track collective distance
+- [ ] Challenge leaderboard within a group
+- [ ] This is the lowest priority stretch goal
+
+---
+
+## Phase 10 — Submission Preparation
+
+**Goal:** Ensure all submission requirements are met. Nothing should be TODO.
+
+- [ ] README final pass:
+  - [ ] Live deployment URLs filled in
+  - [ ] "What makes this project stand out" section filled in
+  - [ ] Tech stack section accurate (styling = Tailwind CSS)
+  - [ ] Advanced requirements checklist — exactly 3, all justified
+  - [ ] Security measures section — detailed write-up per measure
+  - [ ] Self-reflection section filled in
+  - [ ] Getting started / environment setup instructions complete
+- [ ] `/specs` completeness check:
+  - [ ] `specs/00-architecture.md` exists and is up to date
+  - [ ] `specs/01-data-model.md` exists and is up to date
+  - [ ] All ADRs in `specs/decisions/` for non-trivial choices
+  - [ ] All prompt logs in `specs/prompts/` for every agent session
+- [ ] Commit history review: ensure regular, meaningful commits (not a single dump)
+- [ ] Record 6-minute submission video:
+  - Part 1: How AI was used during development (reference `/specs`)
+  - Part 2: Design decisions made during the project
+- [ ] Final deployment verification: both URLs live and working
+
+---
+
+## Dependency Graph (build order)
+
+```
+Phase 0 (scaffold)
+  └──▶ Phase 1 (backend auth + DB)
+         ├──▶ Phase 2 (backend CRUD + gamification)
+         │      └──▶ Phase 3 (backend tests)
+         └──▶ Phase 4 (frontend core)
+                └──▶ Phase 5 (frontend pages)
+                       └──▶ Phase 6 (frontend tests)
+                              └──▶ Phase 7 (polish)
+                                     └──▶ Phase 8 (deploy)
+                                            ├──▶ Phase 9 (stretch, if time)
+                                            └──▶ Phase 10 (submission)
+```
+
+> **Note:** Phases 2 and 4 can be partially parallelised — frontend auth pages (4C) only need the auth endpoints from 1B, not all of Phase 2. Similarly, frontend feature pages (5A–5E) can begin with mock data while backend endpoints are being built.
+
+---
+
+## Key Decisions Log
+
+| # | Decision | Status | ADR |
+|---|----------|--------|-----|
+| 1 | Split-storage JWT (access in memory, refresh in HttpOnly cookie) | Decided | `specs/decisions/001-split-storage-jwt.md` |
+| 2 | Rate limiting strategy (fixed window for login, sliding for submissions) | Decided | `specs/decisions/002-rate-limiting-strategy.md` |
+| 3 | Password hashing: ASP.NET Core Identity `PasswordHasher<T>` (PBKDF2) | Decided | Documented in AGENTS.md §5.2 |
+| 4 | Points formula and streak rules | Pending | To be decided during Phase 2B |
+| 5 | Badge definitions and unlock criteria | Pending | To be decided during Phase 2B |
+| 6 | Frontend visual identity / design system | Pending | To be decided during Phase 4/5 |

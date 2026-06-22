@@ -2,7 +2,7 @@
 
 This file tells AI coding agents (Claude Code, GitHub Copilot, Cursor, etc.) how to work in this repository. It is the single source of truth for stack decisions, conventions, and process — read it before writing any code.
 
-**Language rule (applies everywhere in this repo):** all written output — README, `/specs` files, ADRs, prompt logs, commit messages, code comments — must be in English, regardless of what language a request to the agent was made in.
+**Language rule (applies everywhere in this repo):** all written output — README, `/specs` files, ADRs, prompt logs, commit messages, code comments — must be in English, regardless of what language a request to the agent was made in. This includes prompt logs in `specs/prompts/`: if the user's actual prompt was in Chinese (or mixed Chinese/English), translate it faithfully into English before saving.
 
 **Context:** This is a solo submission for Microsoft Student Accelerator (MSA) 2026, Phase 2, Software Stream. Theme: **Gamification**. The assessment is individually marked and explicitly rewards visible, well-documented AI usage — every agent session that produces non-trivial work must leave a trace in `/specs` (see "Spec-driven workflow" below). Treat that requirement as a hard constraint, not a suggestion.
 
