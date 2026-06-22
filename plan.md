@@ -39,48 +39,48 @@ This file is the single source of truth for what's done, what's in progress, and
 
 ### 1A — Data Model & Database
 
-- [ ] Define EF Core entities:
+- [x] Define EF Core entities:
   - `User` (Id, Username, Email, PasswordHash, DisplayName, AvatarUrl, TotalPoints, CurrentStreak, LongestStreak, TotalDistanceKm, TotalRuns, CreatedAt, UpdatedAt)
   - `Run` (Id, UserId, DistanceKm, DurationMinutes, RunDate, Notes, PointsEarned, PaceMinPerKm, CreatedAt, UpdatedAt)
   - `Badge` (Id, Name, Description, IconUrl, Category, CriteriaJson, PointsReward, CreatedAt)
   - `UserBadge` (Id, UserId, BadgeId, UnlockedAt)
   - `RefreshToken` (Id, UserId, TokenHash, ExpiresAt, CreatedAt, RevokedAt, ReplacedByTokenHash)
-- [ ] Create `AppDbContext` with relationships and constraints
-- [ ] Generate initial EF Core migration
+- [x] Create `AppDbContext` with relationships and constraints
+- [x] Generate initial EF Core migration
 - [ ] Provision Azure SQL Database (Free offer tier — 100k vCore-seconds/month, 32GB)
 - [ ] Apply migration to Azure SQL, verify cold-start tolerance
-- [ ] Create and commit `specs/01-data-model.md`
+- [x] Create and commit `specs/01-data-model.md`
 
 ### 1B — Authentication (Split-Storage JWT)
 
-- [ ] Implement `AuthService`:
+- [x] Implement `AuthService`:
   - User registration (validate input → hash password → create user → issue tokens)
   - User login (validate credentials → issue tokens)
   - Token refresh (validate refresh cookie → rotate → issue new pair)
   - Logout (revoke refresh token)
-- [ ] Password hashing via `PasswordHasher<User>` (PBKDF2, ASP.NET Core Identity)
-- [ ] Access token: short-lived (15 min), signed with key from config, includes `sub`, `iss`, `aud`, `exp`
-- [ ] Refresh token: rotate-on-use, stored hashed (SHA-256) in `RefreshTokens` table
+- [x] Password hashing via `PasswordHasher<User>` (PBKDF2, ASP.NET Core Identity)
+- [x] Access token: short-lived (15 min), signed with key from config, includes `sub`, `iss`, `aud`, `exp`
+- [x] Refresh token: rotate-on-use, stored hashed (SHA-256) in `RefreshTokens` table
   - Set as `HttpOnly`, `Secure`, `SameSite=Strict` cookie, `Path=/api/auth/refresh`
-- [ ] Double-submit CSRF token:
+- [x] Double-submit CSRF token:
   - On login/refresh: server sets non-HttpOnly `csrf_token` cookie
   - Frontend reads cookie, echoes as `X-CSRF-Token` header on refresh calls
   - Server validates header matches cookie
-- [ ] CORS: explicit allow-list (Vercel origin only), `AllowCredentials()`, no wildcard
-- [ ] JWT validation middleware: validate `iss`, `aud`, `exp` on every protected request
-- [ ] Create ADR: `specs/decisions/001-split-storage-jwt.md`
+- [x] CORS: explicit allow-list (Vercel origin only), `AllowCredentials()`, no wildcard
+- [x] JWT validation middleware: validate `iss`, `aud`, `exp` on every protected request
+- [x] Create ADR: `specs/decisions/001-split-storage-jwt.md`
 
 ### 1C — Rate Limiting & Data Validation
 
-- [ ] ASP.NET Core rate-limiting middleware:
+- [x] ASP.NET Core rate-limiting middleware:
   - `/api/auth/login` — fixed window, e.g. 5 attempts / 15 min per IP
-  - `/api/runs` (POST) — sliding window, e.g. 10 submissions / hour per user
-- [ ] Data validation via Data Annotations on all DTOs:
+  - `/api/runs` (POST) — sliding window, e.g. 10 submissions / hour per user (configured; to be applied in Phase 2)
+- [x] Data validation via Data Annotations on all DTOs:
   - Reject negative distances, durations
   - Reject future run dates
   - Enforce max string lengths, required fields
   - Reject oversized payloads
-- [ ] Create ADR: `specs/decisions/002-rate-limiting-strategy.md`
+- [x] Create ADR: `specs/decisions/002-rate-limiting-strategy.md`
 
 ---
 

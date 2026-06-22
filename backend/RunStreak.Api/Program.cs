@@ -4,10 +4,17 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.AspNetCore.Identity;
 using RunStreak.Api.Data;
+using RunStreak.Api.Models;
+using RunStreak.Api.Services;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// ─── DI Services ─────────────────────────────────────────────────────────────
+builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
+builder.Services.AddScoped<IAuthService, AuthService>();
 
 // ─── Controllers ────────────────────────────────────────────────────────────
 builder.Services.AddControllers();
