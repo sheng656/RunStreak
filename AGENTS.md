@@ -54,6 +54,7 @@ If asked to "add" a 4th advanced feature, implement it but explicitly warn that 
 /
 ├── AGENTS.md                  # this file
 ├── README.md                  # public-facing project README (submission requirement)
+├── plan.md                    # LIVE progress tracker — what's done, in-progress, next up
 ├── backend/                   # .NET 10 Web API
 │   ├── RunStreak.Api/
 │   ├── RunStreak.Tests/
@@ -70,6 +71,8 @@ If asked to "add" a 4th advanced feature, implement it but explicitly warn that 
 ```
 
 Do not flatten this structure or move `specs/` — the marking rubric explicitly checks for it at the repo root.
+
+**`plan.md` is a live document, not a one-time artifact.** Read it at the start of every session to know current state (don't assume — check what's actually marked done vs in-progress). Update it at the end of every session: mark what was finished, move the next task up, note anything newly discovered. If a session ends without this update, the next session's context will be stale.
 
 ## 4. Spec-driven workflow (read this before coding)
 
