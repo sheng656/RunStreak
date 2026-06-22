@@ -46,8 +46,30 @@ Optional advanced features may include:
 5. `specs/decisions/002-rate-limiting-strategy.md` — ADR for rate limiting strategy.
 6. `specs/prompts/2026-06-22-project-planning.md` — this file.
 
-## Notes
+## Prompt 3 — Start Phase 0
 
-- No code was written this session — this was a planning-only session.
+> start Phase 0.
+
+**What the agent produced:**
+
+Backend scaffolding:
+- `.NET 10` solution (`RunStreak.slnx`) with `RunStreak.Api` and `RunStreak.Tests` projects
+- NuGet packages: `EF Core + SQL Server`, `EF Core Design`, `JWT Bearer`, `Scalar.AspNetCore`, `AspNetCore.Mvc.Testing`
+- `Program.cs`: JWT auth, CORS (explicit allow-list + credentials), rate limiting (2 policies), Scalar configured
+- `AppDbContext.cs`: all 5 entities with relationships, indexes, column constraints
+- Entity models: `User`, `Run`, `Badge`, `UserBadge`, `RefreshToken`
+- `appsettings.json` (non-sensitive base config), `appsettings.Example.json` (placeholder template), `appsettings.Development.json` (gitignored local dev config)
+
+Frontend scaffolding:
+- React + TypeScript + Vite project
+- Tailwind CSS v4 via `@tailwindcss/vite` plugin, custom CSS variables for light/dark theme
+- `index.html`: Inter font, SEO meta, anti-flash blocking script for theme
+- Zustand stores: `authStore` (in-memory access token only), `themeStore` (persisted, dark class strategy), `runStore`, `gamificationStore`
+- Axios API client with Bearer interceptor, 401 → silent refresh + CSRF header, request queue for concurrent 401s
+- API modules: `auth`, `runs`, `users`, `leaderboard`, `badges`
+- Shared TypeScript types mirroring all backend DTOs
+- Vitest + RTL + jest-dom configured
+
+Both projects build cleanly (0 errors). Initial commit made: `feat: Phase 0 — project scaffolding complete`.
 - The user also updated AGENTS.md to add `plan.md` to the repository structure and added a note about it being a live document that agents must read at session start and update at session end.
 - The user updated the session kickoff prompt template to include checking plan.md and reporting its current state.
