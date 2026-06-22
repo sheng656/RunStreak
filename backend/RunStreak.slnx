@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="RunStreak.Api/RunStreak.Api.csproj" />
+  <Project Path="RunStreak.Tests/RunStreak.Tests.csproj" />
+</Solution>

@@ -1,0 +1,6 @@
+@RunStreak.Api_HostAddress = http://localhost:5136
+
+GET {{RunStreak.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

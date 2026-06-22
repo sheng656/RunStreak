@@ -1,0 +1,50 @@
+# ─── .NET ───────────────────────────────────────────────────────────────────
+# User-specific settings
+*.user
+*.suo
+.vs/
+
+# Build artifacts
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+
+# Secrets — never commit real values
+# Real secrets go here; appsettings.Example.json (committed) shows the shape
+backend/RunStreak.Api/appsettings.Development.json
+backend/*/appsettings.*.json
+!backend/RunStreak.Api/appsettings.json
+!backend/RunStreak.Api/appsettings.Example.json
+
+# Publish output
+[Pp]ublish/
+PublishProfiles/
+
+# NuGet
+*.nupkg
+*.snupkg
+.nuget/
+
+# ─── Node / Frontend ─────────────────────────────────────────────────────────
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+frontend/.env.local
+frontend/.env.*.local
+
+# ─── Environment / secrets ───────────────────────────────────────────────────
+.env
+.env.local
+*.env
+!*.env.example
+
+# ─── OS & editors ────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# ─── IDE ─────────────────────────────────────────────────────────────────────
+.idea/
+*.code-workspace

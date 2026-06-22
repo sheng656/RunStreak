@@ -1,8 +1,8 @@
 # RunStreak — Project Plan (LIVE)
 
 > **Last updated:** 2026-06-22
-> **Current focus:** Phase 0 — Project Scaffolding
-> **Overall status:** 🚧 Planning complete, ready to begin scaffolding
+> **Current focus:** Phase 1 — Backend: Data Model, Auth & Security
+> **Overall status:** ✅ Phase 0 complete, Phase 1 next
 
 This file is the single source of truth for what's done, what's in progress, and what's next. Agents must read it at the start of every session and update it at the end.
 
@@ -12,24 +12,23 @@ This file is the single source of truth for what's done, what's in progress, and
 
 **Goal:** Get both projects compiling, configured, and ready for feature development.
 
-- [ ] Initialize .NET 10 Web API project (`backend/RunStreak.Api/`)
+- [x] Initialize .NET 10 Web API project (`backend/RunStreak.Api/`)
   - Nullable reference types enabled
   - `appsettings.Example.json` with placeholder keys (JWT secret, connection string, CORS origin)
-  - `appsettings.Development.json` in `.gitignore`
+  - `appsettings.Development.json` gitignored
   - Scalar configured for OpenAPI docs (NOT Swagger UI)
-- [ ] Initialize xUnit test project (`backend/RunStreak.Tests/`)
-- [ ] Initialize React + TypeScript project with Vite (`frontend/`)
-  - Vite, not CRA
-- [ ] Install and configure Tailwind CSS in the frontend
-- [ ] Install core frontend dependencies: `zustand`, `react-router-dom`
-- [ ] Set up frontend folder structure:
-  - `src/stores/` (Zustand stores)
-  - `src/api/` (typed API client)
-  - `src/components/`
-  - `src/pages/`
-  - `src/hooks/`
-  - `src/types/`
-- [ ] Verify both projects build cleanly
+  - JWT auth, CORS, rate limiting middleware wired in `Program.cs`
+  - All 5 EF Core entities + `AppDbContext` created
+- [x] Initialize xUnit test project (`backend/RunStreak.Tests/`) with `WebApplicationFactory` support
+- [x] Initialize React + TypeScript project with Vite (`frontend/`)
+- [x] Install and configure Tailwind CSS v4 via `@tailwindcss/vite` plugin
+- [x] Install core frontend dependencies: `zustand`, `react-router-dom`, `axios`
+- [x] Set up frontend folder structure:
+  - `src/stores/` — all 4 Zustand stores created (`authStore`, `themeStore`, `runStore`, `gamificationStore`)
+  - `src/api/` — typed API client + auth/runs/users/leaderboard/badges modules
+  - `src/types/api.ts` — shared TypeScript types mirroring backend DTOs
+  - `src/test/setup.ts` — Vitest + jest-dom setup
+- [x] Verify both projects build cleanly (0 errors)
 - [ ] Initial commit with project skeleton
 
 ---

@@ -1,0 +1,81 @@
+@import "tailwindcss";
+
+/*
+  Tailwind CSS v4 import — the @tailwindcss/vite plugin handles all processing.
+  Theme design tokens and utilities are defined below.
+  The `dark:` variant is activated via the `dark` class on <html> (class strategy),
+  which is toggled by themeStore and persisted to localStorage.
+*/
+
+@layer base {
+  :root {
+    /* Color palette — light mode */
+    --color-brand: 250 84% 64%;       /* vibrant indigo-violet */
+    --color-brand-dark: 250 90% 55%;
+    --color-success: 142 71% 45%;     /* emerald */
+    --color-warning: 38 92% 50%;      /* amber */
+    --color-danger: 0 84% 60%;        /* red */
+
+    --color-bg: 0 0% 98%;
+    --color-surface: 0 0% 100%;
+    --color-surface-2: 0 0% 96%;
+    --color-border: 0 0% 90%;
+    --color-text: 240 10% 12%;
+    --color-text-muted: 240 5% 45%;
+  }
+
+  .dark {
+    /* Color palette — dark mode */
+    --color-bg: 240 10% 7%;
+    --color-surface: 240 8% 11%;
+    --color-surface-2: 240 7% 15%;
+    --color-border: 240 6% 22%;
+    --color-text: 240 5% 94%;
+    --color-text-muted: 240 4% 58%;
+  }
+
+  /* Base typography */
+  html {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    @apply bg-[hsl(var(--color-bg))] text-[hsl(var(--color-text))];
+    @apply transition-colors duration-200;
+  }
+
+  /* Smooth scrolling */
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* Focus ring — consistent across components */
+  *:focus-visible {
+    @apply outline-none ring-2 ring-[hsl(var(--color-brand))] ring-offset-2;
+    @apply ring-offset-[hsl(var(--color-bg))];
+  }
+}
+
+@layer utilities {
+  /* Glassmorphism effect for cards */
+  .glass {
+    @apply backdrop-blur-md;
+    background: hsl(var(--color-surface) / 0.8);
+    border: 1px solid hsl(var(--color-border));
+  }
+
+  /* Brand gradient text */
+  .gradient-text {
+    @apply bg-gradient-to-r from-violet-500 to-indigo-400 bg-clip-text text-transparent;
+  }
+
+  /* Smooth hover transitions */
+  .hover-lift {
+    @apply transition-transform duration-200 ease-out;
+  }
+  .hover-lift:hover {
+    @apply -translate-y-0.5;
+  }
+}
