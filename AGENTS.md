@@ -156,8 +156,8 @@ Each implemented measure needs a short README paragraph: what it protects agains
 
 This is a student project with no budget. Agents must default to free-tier-safe choices and flag anything that risks cost.
 
-- **Azure SQL Database:** use the **Free offer** database (100,000 vCore-seconds/month, 32GB storage, auto-pauses). Do not provision a paid tier, elastic pool, or Hyperscale. Connection strings should tolerate auto-pause/cold-start latency (don't assume always-on).
-- **Azure App Service:** use **F1 (Free)** tier if it fits, or **B1 (Basic, Always Free credit)** if F1's limitations (60 CPU min/day, no custom domain SSL needed here) are a blocker — confirm with the user before provisioning anything above Free/Basic.
+- **Azure SQL Database:** use the **Free offer** database (100,000 vCore-seconds/month, 32GB storage, auto-pauses, deployment region `LOCATION="australiaeast"`). Do not provision a paid tier, elastic pool, or Hyperscale. Connection strings should tolerate auto-pause/cold-start latency (don't assume always-on).
+- **Azure App Service:** use **F1 (Free)** tier if it fits, or **B1 (Basic, Always Free credit)** if F1's limitations (60 CPU min/day, no custom domain SSL needed here) are a blocker (deployment region `LOCATION="australiaeast"`) — confirm with the user before provisioning anything above Free/Basic.
 - **Vercel:** free Hobby tier is sufficient; no action needed.
 - Before suggesting or provisioning any Azure resource, check it against the free/student tier list. If a desired feature (e.g. SignalR for WebSockets, Application Insights for metrics) has a paid-only mode, default to its free-tier equivalent and say so explicitly rather than silently provisioning something billable.
 - Never commit connection strings, JWT signing keys, or any secret to git — use `appsettings.Development.json` (gitignored) locally and environment variables / Azure App Service configuration / GitHub Actions secrets in deployment. Add a `appsettings.Example.json` with placeholder keys instead.

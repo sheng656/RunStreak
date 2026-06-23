@@ -1,8 +1,8 @@
 # RunStreak — Project Plan (LIVE)
 
-> **Last updated:** 2026-06-22
-> **Current focus:** Phase 1 — Backend: Data Model, Auth & Security
-> **Overall status:** ✅ Phase 0 complete, Phase 1 next
+> **Last updated:** 2026-06-23
+> **Current focus:** Phase 4 — Frontend: Core Infrastructure
+> **Overall status:** ✅ Phase 0-3 complete, Phase 4 next
 
 This file is the single source of truth for what's done, what's in progress, and what's next. Agents must read it at the start of every session and update it at the end.
 
@@ -47,8 +47,8 @@ This file is the single source of truth for what's done, what's in progress, and
   - `RefreshToken` (Id, UserId, TokenHash, ExpiresAt, CreatedAt, RevokedAt, ReplacedByTokenHash)
 - [x] Create `AppDbContext` with relationships and constraints
 - [x] Generate initial EF Core migration
-- [ ] Provision Azure SQL Database (Free offer tier — 100k vCore-seconds/month, 32GB)
-- [ ] Apply migration to Azure SQL, verify cold-start tolerance
+- [x] Provision Azure SQL Database (Free offer tier — 100k vCore-seconds/month, 32GB)
+- [x] Apply migration to Azure SQL, verify cold-start tolerance
 - [x] Create and commit `specs/01-data-model.md`
 
 ### 1B — Authentication (Split-Storage JWT)
@@ -90,38 +90,38 @@ This file is the single source of truth for what's done, what's in progress, and
 
 ### 2A — Run Management (CRUD)
 
-- [ ] `RunsController` / service layer:
+- [x] `RunsController` / service layer:
   - `POST /api/runs` — log a run (auto-calculates points, updates user stats)
   - `GET /api/runs` — list user's runs (paginated, sortable)
   - `GET /api/runs/{id}` — get a single run
   - `PUT /api/runs/{id}` — update a run (recalculate points)
   - `DELETE /api/runs/{id}` — delete a run (recalculate points, check badge revocation)
-- [ ] DTOs for all run operations (never expose EF entities)
+- [x] DTOs for all run operations (never expose EF entities)
 
 ### 2B — Gamification Rule Engine
 
-- [ ] `PointsService`:
+- [x] `PointsService`:
   - Base points per run (e.g. 10 pts)
   - Distance bonus (e.g. 5 pts per km)
   - Streak multiplier (e.g. 1.5× if streak ≥ 7 days)
   - Configurable rules, not hardcoded magic numbers
-- [ ] `StreakService`:
+- [x] `StreakService`:
   - Calculate current streak (consecutive days with a logged run)
   - Calculate longest streak
   - Detect streak break (reset current streak)
   - Update user's `CurrentStreak` and `LongestStreak` on each run CRUD op
-- [ ] `BadgeService`:
+- [x] `BadgeService`:
   - Check badge unlock conditions after each run (first run, 7-day streak, 50km total, etc.)
   - Seed initial badge definitions (migration or startup seeder)
   - Return newly unlocked badges in run-logging response
-- [ ] `LeaderboardService`:
+- [x] `LeaderboardService`:
   - `GET /api/leaderboard` — top users by points (paginated)
   - `GET /api/leaderboard?type=streaks` — top users by current streak
   - Include rank, display name, avatar, points, streak
 
 ### 2C — User Profile & Stats
 
-- [ ] `UsersController`:
+- [x] `UsersController`:
   - `GET /api/users/me` — current user profile + stats
   - `PUT /api/users/me` — update display name, avatar
   - `GET /api/users/{id}/badges` — user's unlocked badges
@@ -133,18 +133,18 @@ This file is the single source of truth for what's done, what's in progress, and
 
 **Goal:** Achieve meaningful test coverage on the highest-value, most bug-prone logic.
 
-- [ ] Gamification rule engine tests (highest priority):
+- [x] Gamification rule engine tests (highest priority):
   - Points calculation (base, distance bonus, streak multiplier)
   - Streak calculation (consecutive days, reset on gap, longest streak tracking)
   - Badge unlocking (condition evaluation, no duplicate unlock)
-- [ ] Auth service tests:
+- [x] Auth service tests:
   - Registration (happy path, duplicate email, weak password)
   - Login (valid, invalid credentials)
   - Token refresh (valid, expired, revoked, reuse detection)
-- [ ] Controller/integration tests with `WebApplicationFactory`:
+- [x] Controller/integration tests with `WebApplicationFactory`:
   - Runs CRUD (auth required, validation, pagination)
   - Leaderboard (correct ordering, pagination)
-- [ ] Data validation tests (reject invalid inputs at DTO level)
+- [x] Data validation tests (reject invalid inputs at DTO level)
 
 ---
 

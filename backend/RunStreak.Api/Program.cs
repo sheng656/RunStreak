@@ -15,6 +15,12 @@ var builder = WebApplication.CreateBuilder(args);
 // ─── DI Services ─────────────────────────────────────────────────────────────
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IPointsService, PointsService>();
+builder.Services.AddScoped<IStreakService, StreakService>();
+builder.Services.AddScoped<IBadgeService, BadgeService>();
+builder.Services.AddScoped<ILeaderboardService, LeaderboardService>();
+builder.Services.AddScoped<IRunService, RunService>();
+builder.Services.AddScoped<IUserService, UserService>();
 
 // ─── Controllers ────────────────────────────────────────────────────────────
 builder.Services.AddControllers();
@@ -141,6 +147,22 @@ app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+
+// Seed database on startup
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    try
+    {
+        var dbContext = services.GetRequiredService<AppDbContext>();
+        await DbSeeder.SeedBadgesAsync(dbContext);
+    }
+    catch (Exception ex)
+    {
+        var logger = services.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "An error occurred while seeding the database.");
+    }
+}
 
 app.Run();
 
