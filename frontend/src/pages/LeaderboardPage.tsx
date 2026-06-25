@@ -25,7 +25,9 @@ export default function LeaderboardPage() {
   }, [rankType])
 
   useEffect(() => {
-    load()
+    Promise.resolve().then(() => {
+      load()
+    })
   }, [load])
 
   function getRankStyle(rank: number): string {

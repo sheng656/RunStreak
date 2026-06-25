@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Medal, Lock, Trophy, Star, MapPin, Flame, Award } from 'lucide-react'
+import { Medal, Trophy, Star, MapPin, Flame, Award } from 'lucide-react'
 import { useAuthStore } from '../stores/authStore'
 import usersApi from '../api/users'
 import LoadingSpinner from '../components/ui/LoadingSpinner'

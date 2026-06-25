@@ -3,7 +3,6 @@ import { Link, useNavigate } from 'react-router-dom'
 import { Flame, Mail, Lock, Eye, EyeOff } from 'lucide-react'
 import { useAuthStore } from '../stores/authStore'
 import authApi from '../api/auth'
-import usersApi from '../api/users'
 import toast from 'react-hot-toast'
 
 export default function LoginPage() {

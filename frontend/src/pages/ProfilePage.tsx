@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import {
-  User, MapPin, Timer, Flame, TrendingUp,
+  MapPin, Timer, Flame, TrendingUp,
   CalendarDays, Zap, Trophy, Save,
 } from 'lucide-react'
 import { useAuthStore } from '../stores/authStore'
@@ -24,8 +24,10 @@ export default function ProfilePage() {
 
   useEffect(() => {
     if (user) {
-      setDisplayName(user.displayName || '')
-      setAvatarUrl(user.avatarUrl || '')
+      Promise.resolve().then(() => {
+        setDisplayName(user.displayName || '')
+        setAvatarUrl(user.avatarUrl || '')
+      })
     }
   }, [user])
 

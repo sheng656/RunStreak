@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import {
   MapPin, Timer, Zap, Plus, ChevronLeft, ChevronRight,
-  Calendar, Trash2, Pencil,
+  Calendar, Trash2,
 } from 'lucide-react'
 import runsApi from '../api/runs'
 import LoadingSpinner from '../components/ui/LoadingSpinner'

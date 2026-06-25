@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
-  Flame, Trophy, MapPin, Timer, TrendingUp, Plus,
+  Flame, Trophy, MapPin, TrendingUp, Plus,
   Medal, Zap, CalendarDays,
 } from 'lucide-react'
 import { useAuthStore } from '../stores/authStore'

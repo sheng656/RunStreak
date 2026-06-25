@@ -1,7 +1,6 @@
 import { useState, type FormEvent } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { MapPin, Timer, Calendar, FileText, Zap, Medal, ArrowLeft } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import { MapPin, Timer, Calendar, FileText, Zap, Medal, ArrowLeft } from 'lucide-react'
 import runsApi from '../api/runs'
 import { useAuthStore } from '../stores/authStore'
 import usersApi from '../api/users'
@@ -9,7 +8,6 @@ import toast from 'react-hot-toast'
 import type { Badge } from '../types/api'
 
 export default function LogRunPage() {
-  const navigate = useNavigate()
   const { user, setUser } = useAuthStore()
 
   const [form, setForm] = useState({

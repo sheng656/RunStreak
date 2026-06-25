@@ -1,3 +1,18 @@
-// Vitest setup file — runs before each test file.
-// Extends expect with @testing-library/jest-dom matchers (toBeInTheDocument etc.)
 import '@testing-library/jest-dom'
+import { vi } from 'vitest'
+
+// Mock matchMedia globally for jsdom environment since it does not exist by default
+Object.defineProperty(window, 'matchMedia', {
+  writable: true,
+  value: vi.fn().mockImplementation((query: string) => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: vi.fn(), // deprecated
+    removeListener: vi.fn(), // deprecated
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    dispatchEvent: vi.fn(),
+  })),
+})
+

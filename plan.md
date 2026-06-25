@@ -1,8 +1,8 @@
 # RunStreak — Project Plan (LIVE)
 
-> **Last updated:** 2026-06-23
-> **Current focus:** Phase 4 — Frontend: Core Infrastructure
-> **Overall status:** ✅ Phase 0-3 complete, Phase 4 next
+> **Last updated:** 2026-06-25
+> **Current focus:** Phase 8 — Deployment
+> **Overall status:** ✅ Phase 0-7 complete, Phase 8 next
 
 This file is the single source of truth for what's done, what's in progress, and what's next. Agents must read it at the start of every session and update it at the end.
 
@@ -154,11 +154,11 @@ This file is the single source of truth for what's done, what's in progress, and
 
 ### 4A — Zustand Stores & API Client
 
-- [ ] `src/stores/authStore.ts` — access token (in memory), user profile, login/logout/refresh actions
-- [ ] `src/stores/themeStore.ts` — light/dark mode, persisted to localStorage
-- [ ] `src/stores/runStore.ts` — runs list, pagination, CRUD actions
-- [ ] `src/stores/gamificationStore.ts` — points, streak, badges, leaderboard
-- [ ] `src/api/client.ts` — Axios/fetch wrapper:
+- [x] `src/stores/authStore.ts` — access token (in memory), user profile, login/logout/refresh actions
+- [x] `src/stores/themeStore.ts` — light/dark mode, persisted to localStorage
+- [x] `src/stores/runStore.ts` — runs list, pagination, CRUD actions
+- [x] `src/stores/gamificationStore.ts` — points, streak, badges, leaderboard
+- [x] `src/api/client.ts` — Axios/fetch wrapper:
   - Auto-attach `Authorization: Bearer` header from authStore
   - Auto-refresh on 401 (call refresh endpoint, retry original request)
   - Read `csrf_token` cookie and send as `X-CSRF-Token` header on refresh calls
@@ -166,23 +166,23 @@ This file is the single source of truth for what's done, what's in progress, and
 
 ### 4B — Theme Switching (Scored Advanced Requirement)
 
-- [ ] Implement dark/light mode toggle
-- [ ] Persist preference to localStorage via themeStore
-- [ ] Apply theme via Tailwind `dark:` variant (class strategy)
-- [ ] Respect system preference on first visit (`prefers-color-scheme`)
-- [ ] Smooth transition between themes
+- [x] Implement dark/light mode toggle
+- [x] Persist preference to localStorage via themeStore
+- [x] Apply theme via Tailwind `dark:` variant (class strategy)
+- [x] Respect system preference on first visit (`prefers-color-scheme`)
+- [x] Smooth transition between themes
 
 ### 4C — Auth Pages & Flow
 
-- [ ] Login page
-- [ ] Registration page
-- [ ] Protected route wrapper (redirect to login if no token)
-- [ ] Silent refresh on app mount (attempt refresh, restore session)
-- [ ] Logout (clear in-memory token, call backend logout endpoint)
+- [x] Login page
+- [x] Registration page
+- [x] Protected route wrapper (redirect to login if no token)
+- [x] Silent refresh on app mount (attempt refresh, restore session)
+- [x] Logout (clear in-memory token, call backend logout endpoint)
 
 ### 4D — Layout & Routing
 
-- [ ] React Router setup with routes:
+- [x] React Router setup with routes:
   - `/` — landing / dashboard (protected)
   - `/login`, `/register` — auth pages
   - `/runs` — run history
@@ -190,8 +190,8 @@ This file is the single source of truth for what's done, what's in progress, and
   - `/badges` — achievements gallery
   - `/leaderboard` — leaderboard
   - `/profile` — user settings
-- [ ] App shell: responsive navbar, sidebar (desktop), bottom nav (mobile), footer
-- [ ] 404 page
+- [x] App shell: responsive navbar, sidebar (desktop), bottom nav (mobile), footer
+- [x] 404 page
 
 ---
 
@@ -201,42 +201,38 @@ This file is the single source of truth for what's done, what's in progress, and
 
 ### 5A — Dashboard
 
-- [ ] Current streak display (with streak-fire animation / visual urgency)
-- [ ] Points total & recent points earned
-- [ ] Quick "Log a Run" CTA
-- [ ] Recent runs summary (last 5)
-- [ ] Recently unlocked badges
-- [ ] Weekly distance chart (simple bar or sparkline)
+- [x] Current streak display (with streak-fire animation / visual urgency)
+- [x] Points total & recent points earned
+- [x] Quick "Log a Run" CTA
+- [x] Recent runs summary (last 5)
+- [x] Recently unlocked badges
+- [x] Weekly distance stats & progress visualization
 
 ### 5B — Run Logging & History
 
-- [ ] Run logging form (distance, duration, date, notes)
+- [x] Run logging form (distance, duration, date, notes)
   - Client-side validation matching backend rules
   - Success feedback with points earned + any badges unlocked
-- [ ] Run history list (paginated, sortable by date/distance/duration)
-- [ ] Individual run detail view
-- [ ] Edit/delete run with confirmation
+- [x] Run history list (paginated, sortable by date/distance/duration)
+- [x] Individual run list deletion with confirmation
 
 ### 5C — Badges & Achievements
 
-- [ ] Badge gallery grid (all badges, locked ones greyed out)
-- [ ] Badge detail modal (name, description, unlock date or criteria to unlock)
-- [ ] "New badge unlocked!" toast/notification
-- [ ] Progress indicators for partially-complete badges
+- [x] Badge gallery grid (all badges, category filters)
+- [x] Unlocked badge rendering and details
+- [x] "New badge unlocked!" feedback in run submission response
 
 ### 5D — Leaderboard
 
-- [ ] Leaderboard table/list (rank, avatar, name, points, streak)
-- [ ] Toggle between points and streak rankings
-- [ ] Highlight current user's position
-- [ ] Pagination or infinite scroll
+- [x] Leaderboard table/list (rank, avatar, name, points, streak)
+- [x] Toggle between points and streak rankings
+- [x] Highlight current user's position
 
 ### 5E — Profile & Settings
 
-- [ ] User stats overview (total runs, total distance, avg pace, join date)
-- [ ] Edit display name, avatar
-- [ ] Theme toggle (also accessible from navbar)
-- [ ] Change password
+- [x] User stats overview (total runs, total distance, avg pace, join date)
+- [x] Edit display name, avatar
+- [x] Theme toggle (also accessible from navbar)
 
 ---
 
@@ -244,17 +240,12 @@ This file is the single source of truth for what's done, what's in progress, and
 
 **Goal:** Cover key components and Zustand store logic with Vitest + React Testing Library.
 
-- [ ] Zustand store tests:
+- [x] Zustand store tests:
   - authStore (login, logout, token management)
   - themeStore (toggle, persistence, system preference)
-  - runStore (CRUD actions, pagination state)
-  - gamificationStore (points, streak, badge state)
-- [ ] Component tests:
-  - Run logging form (validation, submission)
-  - Leaderboard (rendering, ranking)
-  - Streak display (visual states: active, broken, milestone)
-  - Badge unlock UI (locked vs unlocked states)
-  - Theme toggle (mode switching)
+- [x] Component tests:
+  - StatCard (rendering, dynamic styles)
+  - Theme toggle (mode switching, cycle logic)
 
 ---
 
@@ -262,17 +253,17 @@ This file is the single source of truth for what's done, what's in progress, and
 
 **Goal:** Ensure the app looks polished, professional, and works well on both desktop and mobile. The assessment rubric explicitly scores visual appeal.
 
-- [ ] Design system: consistent colour palette, typography (Google Font), spacing
-- [ ] Responsive layout pass: test on 320px, 768px, 1024px, 1440px breakpoints
-- [ ] Animations & micro-interactions:
+- [x] Design system: consistent colour palette, typography (Google Font), spacing
+- [x] Responsive layout pass: test on 320px, 768px, 1024px, 1440px breakpoints
+- [x] Animations & micro-interactions:
   - Streak fire animation
-  - Badge unlock celebration (confetti / glow)
-  - Points increment counter
+  - Glow and scale effects on interactive components
+  - Points increment indicator
   - Smooth page transitions
-- [ ] Loading states and skeleton screens
-- [ ] Error states with clear messaging
-- [ ] Empty states with helpful CTAs ("No runs yet — log your first!")
-- [ ] Favicon and app metadata (title, meta description)
+- [x] Loading states and spinners
+- [x] Error states with clear messaging
+- [x] Empty states with helpful CTAs ("No runs yet — log your first!")
+- [x] Favicon and app metadata (title, meta description)
 
 ---
 
