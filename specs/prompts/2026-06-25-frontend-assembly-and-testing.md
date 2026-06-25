@@ -68,3 +68,23 @@ Confirmed reading and verified all 7 checkpoints:
 #### Agent Output
 - Relocated all component class definitions in `index.css` into `@layer base`. This places them lower in the CSS cascade than Tailwind's utility layers, resolving the padding override conflict and fixing the visual overlap of placeholders and icons completely.
 - Clarified that the backend is a .NET 10 project and explained how to navigate to `backend/RunStreak.Api` and execute `dotnet run` or `dotnet watch` to start it, correcting the user's attempt to run `npm run dev` in the backend root.
+
+---
+
+### User Prompt 5
+> any problem in these logs: ... (Dotnet local connection to localdb failure)
+*(Translated: Are there any problems in these dotnet run execution logs?)*
+
+#### Agent Output
+- Explained the `SqlException` database connection error: the local development environment is trying to connect to SQL Server LocalDB (`(localdb)\mssqllocaldb`), which is not installed or running on the user's machine.
+- Advised the user to update their local `appsettings.Development.json` file with their Azure SQL Database connection string or configure User Secrets to use the deployed Azure SQL database during local development.
+
+---
+
+### User Prompt 6
+> Use .NET User Secrets to reset the password and save to Azure secrets. I have logged into Azure.*
+
+#### Agent Output
+- Ran Azure CLI `az sql server update` command to reset the administrator login password of the SQL Server `runstreak-sql-server-unique` in `RunStreakResourceGroup` to a new secure generated password.
+- Initialized local User Secrets for the `RunStreak.Api` project and configured the new Azure SQL Database connection string under the `ConnectionStrings:DefaultConnection` secret.
+- Explained to the user that the local backend application can now connect directly to Azure SQL Database using User Secrets, and that they just need to restart their running backend terminal process.
