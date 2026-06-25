@@ -34,7 +34,9 @@ export default function RunHistoryPage() {
   }, [page])
 
   useEffect(() => {
-    loadRuns()
+    Promise.resolve().then(() => {
+      loadRuns()
+    })
   }, [loadRuns])
 
   async function handleDelete(id: string) {
