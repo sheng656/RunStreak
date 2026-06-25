@@ -4,12 +4,12 @@ import type {
   CreateRunRequest,
   UpdateRunRequest,
   LogRunResponse,
-  PaginatedResponse,
+  RunsListResponse,
 } from '../types/api'
 
 const runsApi = {
   list: (page = 1, pageSize = 10) =>
-    apiClient.get<PaginatedResponse<Run>>('/runs', {
+    apiClient.get<RunsListResponse>('/runs', {
       params: { page, pageSize },
     }),
 
@@ -20,7 +20,7 @@ const runsApi = {
     apiClient.post<LogRunResponse>('/runs', data),
 
   update: (id: string, data: UpdateRunRequest) =>
-    apiClient.put<Run>(`/runs/${id}`, data),
+    apiClient.put<{ run: Run; newlyUnlockedBadges: unknown[] }>(`/runs/${id}`, data),
 
   delete: (id: string) =>
     apiClient.delete(`/runs/${id}`),

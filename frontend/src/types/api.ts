@@ -1,4 +1,5 @@
 // Shared API types — mirrors backend DTOs.
+// Keep in sync with RunStreak.Api DTOs as the backend evolves.
 
 export interface UserProfile {
   id: string
@@ -13,7 +14,6 @@ export interface UserProfile {
   totalRuns: number
   createdAt: string
 }
-// Keep in sync with RunStreak.Api DTOs as the backend evolves.
 
 export interface Run {
   id: string
@@ -39,22 +39,49 @@ export interface Badge {
   unlockedAt: string | null
 }
 
+// Matches backend UserBadgeDto — returned from GET /users/:id/badges
+export interface UserBadge {
+  badgeId: string
+  name: string
+  description: string
+  iconUrl: string
+  category: string
+  pointsReward: number
+  unlockedAt: string
+}
+
+// Matches backend LeaderboardEntryDto — returned from GET /leaderboard
 export interface LeaderboardEntry {
   rank: number
   userId: string
+  username: string
   displayName: string
   avatarUrl: string | null
   totalPoints: number
   currentStreak: number
-  isCurrentUser: boolean
+  longestStreak: number
+  totalDistanceKm: number
+  totalRuns: number
 }
 
-export interface PaginatedResponse<T> {
-  items: T[]
-  total: number
+// Matches backend UserStatsDto — returned from GET /users/:id/stats
+export interface UserStats {
+  totalRuns: number
+  totalDistanceKm: number
+  totalDurationMinutes: number
+  averagePaceMinPerKm: number
+  averageDistanceKm: number
+  longestRunKm: number
+  currentStreak: number
+  longestStreak: number
+}
+
+// Backend runs list response shape: { runs, totalCount, page, pageSize }
+export interface RunsListResponse {
+  runs: Run[]
+  totalCount: number
   page: number
   pageSize: number
-  totalPages: number
 }
 
 // Auth DTOs
@@ -102,9 +129,9 @@ export interface UpdateRunRequest {
   notes?: string
 }
 
+// Backend LogRun returns { run, newlyUnlockedBadges } with 201
 export interface LogRunResponse {
   run: Run
-  pointsEarned: number
   newlyUnlockedBadges: Badge[]
 }
 

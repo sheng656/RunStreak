@@ -1,5 +1,5 @@
 import { apiClient } from './client'
-import type { UserProfile, Badge } from '../types/api'
+import type { UserProfile, UserBadge, UserStats } from '../types/api'
 
 const usersApi = {
   getMe: () =>
@@ -9,7 +9,10 @@ const usersApi = {
     apiClient.put<UserProfile>('/users/me', data),
 
   getBadges: (userId: string) =>
-    apiClient.get<Badge[]>(`/users/${userId}/badges`),
+    apiClient.get<UserBadge[]>(`/users/${userId}/badges`),
+
+  getStats: (userId: string) =>
+    apiClient.get<UserStats>(`/users/${userId}/stats`),
 }
 
 export default usersApi
