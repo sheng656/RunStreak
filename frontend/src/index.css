@@ -152,8 +152,8 @@
   }
 }
 
-/* ── Utility Classes ───────────────────────────────────────────────────── */
-@layer utilities {
+/* ── Component Classes ─────────────────────────────────────────────────── */
+@layer base {
   /* Animations */
   .animate-fade-in { animation: fadeIn 0.3s ease-out; }
   .animate-fade-in-up { animation: fadeInUp 0.4s ease-out; }
@@ -294,7 +294,10 @@
   /* Inputs */
   .input {
     width: 100%;
-    padding: 0.625rem 0.875rem;
+    padding-top: 0.625rem;
+    padding-bottom: 0.625rem;
+    padding-left: 0.875rem;
+    padding-right: 0.875rem;
     background: hsl(var(--color-surface));
     border: 1px solid hsl(var(--color-border));
     border-radius: var(--radius-sm);
