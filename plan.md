@@ -1,8 +1,8 @@
 # RunStreak — Project Plan (LIVE)
 
-> **Last updated:** 2026-06-25
-> **Current focus:** Phase 8 — Deployment
-> **Overall status:** ✅ Phase 0-7 complete, Phase 8 next
+> **Last updated:** 2026-06-29
+> **Current focus:** Phase 8 — Deployment (CORS fix, backend redeployed, smoke testing next)
+> **Overall status:** ✅ Phase 0-7 complete, Phase 8 in progress
 
 This file is the single source of truth for what's done, what's in progress, and what's next. Agents must read it at the start of every session and update it at the end.
 
@@ -271,20 +271,21 @@ This file is the single source of truth for what's done, what's in progress, and
 
 **Goal:** Get the app live on Vercel (frontend) and Azure (backend).
 
-- [ ] Backend deployment to Azure App Service (F1 Free or B1 Basic):
-  - Configure connection string via Azure App Service Configuration (not in code)
-  - Configure JWT signing key via App Service Configuration
-  - Configure CORS allowed origin (Vercel URL)
-  - Verify Scalar API docs accessible at `/scalar/v1`
-- [ ] Frontend deployment to Vercel (Hobby tier):
-  - Set backend API URL as environment variable
-  - Verify build succeeds on Vercel
-  - Test full auth flow against Azure backend
+- [x] Backend deployment to Azure App Service (F1 Free or B1 Basic):
+  - [x] Configure connection string via Azure App Service Configuration (not in code)
+  - [x] Configure JWT signing key via App Service Configuration
+  - [x] Configure CORS allowed origin (`https://runstreak.sheng.nz`, `http://localhost:5173`)
+  - [ ] Verify Scalar API docs accessible at `/scalar/v1`
+- [x] Frontend deployment to Vercel (Hobby tier):
+  - [x] Set backend API URL as environment variable
+  - [x] Verify build succeeds on Vercel
+  - [x] Custom domain: `https://runstreak.sheng.nz`
+  - [ ] Test full auth flow against Azure backend
 - [ ] Smoke test on production:
-  - Register → login → log run → check points/streak → view leaderboard → logout
-  - Verify refresh token flow works cross-origin
-  - Verify CSRF token flow works
-- [ ] Update README with live deployment URLs
+  - [ ] Register → login → log run → check points/streak → view leaderboard → logout
+  - [ ] Verify refresh token flow works cross-origin
+  - [ ] Verify CSRF token flow works
+- [x] Update README with live deployment URLs
 
 ---
 

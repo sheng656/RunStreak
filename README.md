@@ -7,9 +7,9 @@
  
 | Layer | URL | Status |
 |---|---|---|
-| Frontend | `TODO: Vercel URL` | 🚧 |
-| Backend API | `TODO: Azure App Service URL` | 🚧 |
-| API docs (Scalar) | `TODO: <backend-url>/scalar/v1` | 🚧 |
+| Frontend | https://runstreak.sheng.nz | ✅ |
+| Backend API | https://runstreak-api-msa.azurewebsites.net | ✅ |
+| API docs (Scalar) | https://runstreak-api-msa.azurewebsites.net/scalar/v1 | ✅ |
  
 > Deployment will remain live until MSA Phase 2 results are released.
  
@@ -48,27 +48,28 @@ The goal is to take an activity people often struggle to stick with (running con
 - React + TypeScript
 - Zustand (state management)
 - React Router
-- TODO: styling library (e.g. Tailwind CSS / MUI / custom)
+- Tailwind CSS (utility-first styling)
 - Vitest / React Testing Library (unit testing)
 - Hosted on Vercel
 ## Basic requirements checklist
  
 **Backend**
-- [ ] Built with C# / .NET 10+
-- [ ] Entity Framework Core for data access
-- [ ] SQL database (Azure SQL Database) for persistence
-- [ ] Full CRUD operations (runs, badges, users)
-- [ ] Regular, meaningful commit history
-- [ ] Unit tests covering key backend logic
-- [ ] Deployed (Azure App Service)
-- [ ] Scalar API documentation exposed (instead of Swagger UI)
+- [x] Built with C# / .NET 10+
+- [x] Entity Framework Core for data access
+- [x] SQL database (Azure SQL Database) for persistence
+- [x] Full CRUD operations (runs, badges, users)
+- [x] Regular, meaningful commit history
+- [x] Unit tests covering key backend logic
+- [x] Deployed (Azure App Service)
+- [x] Scalar API documentation exposed (instead of Swagger UI)
+
 **Frontend**
-- [ ] Built with React + TypeScript
-- [ ] Visually appealing, responsive UI (desktop + mobile)
-- [ ] Routing via React Router
-- [ ] Regular, meaningful commit history
-- [ ] Unit tests covering key components
-- [ ] Deployed (Vercel)
+- [x] Built with React + TypeScript
+- [x] Visually appealing, responsive UI (desktop + mobile)
+- [x] Routing via React Router
+- [x] Regular, meaningful commit history
+- [x] Unit tests covering key components
+- [x] Deployed (Vercel)
 ## Advanced requirements
  
 > Only the top 3 listed below will be marked, per the assessment brief.
@@ -79,10 +80,10 @@ The goal is to take an activity people often struggle to stick with (running con
    Full light/dark theme support across all pages and components, persisted across sessions.
 3. **Security measures**
    Implementing the following, with justification:
-   - **Password hashing** — user passwords are never stored or transmitted in plaintext; hashed using `TODO: BCrypt / ASP.NET Core Identity PasswordHasher` before persistence. This protects user credentials in the event of a database breach.
-   - **Data validation / sanitisation** — all incoming requests are validated (model validation / FluentValidation) before touching the database, preventing malformed or malicious input (e.g. negative distances, oversized payloads) from corrupting gamification logic or enabling injection-style attacks.
-   - **Rate limiting** — login and run-submission endpoints are rate-limited using ASP.NET Core's built-in rate limiting middleware, to prevent brute-force login attempts and abuse of the points system (e.g. spamming fake runs to inflate the leaderboard).
-   *(TODO: expand this section with implementation specifics once built — middleware used, code snippets/links, and why each measure matters specifically for a gamified app with a public leaderboard.)*
+   - **Split-storage JWT with anti-CSRF** — Access tokens are short-lived (15 min) and kept in memory only (Zustand store, never `localStorage`); refresh tokens are stored in `HttpOnly`, `Secure`, `SameSite=Strict` cookies scoped to `/api/auth/refresh`. CSRF is mitigated via both `SameSite=Strict` and a double-submit CSRF token (server sets a non-HttpOnly `csrf_token` cookie; frontend echoes it as `X-CSRF-Token` header on refresh calls; server validates the match). Refresh tokens are rotated on each use and stored hashed (SHA-256) server-side, so a database breach does not expose usable tokens.
+   - **Password hashing** — user passwords are hashed using ASP.NET Core Identity's `PasswordHasher<User>` (PBKDF2-based) before persistence. Raw passwords are never logged, even in debug builds. This protects user credentials in the event of a database breach.
+   - **Data validation / sanitisation** — all incoming requests are validated via Data Annotations on DTOs before touching the database, rejecting negative distances, future run dates, oversized payloads, and malformed input. This prevents corrupted gamification logic (e.g. negative-distance runs inflating streaks) and injection-style attacks.
+   - **Rate limiting** — ASP.NET Core's built-in rate-limiting middleware is applied to `/api/auth/login` (fixed window: 5 attempts / 15 min per IP, preventing brute-force credential attacks) and `/api/runs` POST (sliding window: 10 submissions / hour per user, preventing leaderboard-inflation spam — a direct incentive given the public leaderboard).
 ### Stretch goals (not submitted for marking, time permitting)
  
 These are extra features that may be implemented for portfolio depth, but per the brief only the 3 features above are scored:
@@ -105,21 +106,33 @@ These are extra features that may be implemented for portfolio depth, but per th
 AI tools were used throughout planning, architecture design, and development. A full record of prompts, agent instructions, and design rationale is kept in [`/specs`](./specs), as required by the assessment brief — see that folder for the detailed log rather than a summary here.
  
 ## Getting started locally
- 
+
+### Prerequisites
+- .NET 10 SDK
+- Node.js 18+
+- Azure SQL Database (or a local SQL Server instance)
+
+### Backend
 ```bash
-# Backend
-cd backend
+cd backend/RunStreak.Api
+# Copy the example config and fill in your real values
+cp appsettings.Example.json appsettings.Development.json
+# Edit appsettings.Development.json — set ConnectionStrings:DefaultConnection and Jwt:Key
 dotnet restore
 dotnet ef database update
 dotnet run
- 
-# Frontend
+```
+
+### Frontend
+```bash
 cd frontend
 npm install
+# Create .env.local with:
+#   VITE_API_URL=https://localhost:<port>/api
 npm run dev
 ```
- 
-TODO: environment variables / connection string setup instructions once finalised.
+
+> **Note:** `appsettings.Development.json` and `.env.local` are gitignored and must never be committed. See `appsettings.Example.json` for the expected shape.
  
 ## Testing
  
