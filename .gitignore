@@ -19,6 +19,7 @@ backend/*/appsettings.*.json
 
 # Publish output
 [Pp]ublish/
+publish.zip
 PublishProfiles/
 
 # NuGet
@@ -48,3 +49,6 @@ Thumbs.db
 # ─── IDE ─────────────────────────────────────────────────────────────────────
 .idea/
 *.code-workspace
+
+.vercel
+.env*
