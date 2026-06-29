@@ -130,16 +130,13 @@ builder.Services.AddRateLimiter(options =>
 var app = builder.Build();
 
 // ─── Middleware pipeline ─────────────────────────────────────────────────────
-if (app.Environment.IsDevelopment())
+app.MapOpenApi();
+// Scalar replaces Swagger UI — see §10 of AGENTS.md
+app.MapScalarApiReference(options =>
 {
-    app.MapOpenApi();
-    // Scalar replaces Swagger UI — see §10 of AGENTS.md
-    app.MapScalarApiReference(options =>
-    {
-        options.Title = "RunStreak API";
-        options.Theme = ScalarTheme.Mars;
-    });
-}
+    options.Title = "RunStreak API";
+    options.Theme = ScalarTheme.Mars;
+});
 
 app.UseHttpsRedirection();
 app.UseCors("Frontend");

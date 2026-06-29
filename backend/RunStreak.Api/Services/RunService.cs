@@ -51,169 +51,184 @@ public class RunService(
 
     public async Task<(RunDto Run, List<Badge> UnlockedBadges)> LogRunAsync(Guid userId, LogRunRequest request)
     {
-        using var transaction = await _context.Database.BeginTransactionAsync();
-        try
+        var strategy = _context.Database.CreateExecutionStrategy();
+        return await strategy.ExecuteAsync(async () =>
         {
-            var user = await _context.Users.FindAsync(userId) 
-                ?? throw new KeyNotFoundException("User not found.");
-
-            // 1. Create run entity
-            var run = new Run
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
             {
-                UserId = userId,
-                DistanceKm = request.DistanceKm,
-                DurationMinutes = request.DurationMinutes,
-                RunDate = request.RunDate.ToUniversalTime(),
-                Notes = request.Notes,
-                PaceMinPerKm = request.DurationMinutes / request.DistanceKm,
-                PointsEarned = 0, // Calculated after updating streak
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
-            };
+                var user = await _context.Users.FindAsync(userId) 
+                    ?? throw new KeyNotFoundException("User not found.");
 
-            _context.Runs.Add(run);
-            await _context.SaveChangesAsync();
+                // 1. Create run entity
+                var run = new Run
+                {
+                    UserId = userId,
+                    DistanceKm = request.DistanceKm,
+                    DurationMinutes = request.DurationMinutes,
+                    RunDate = request.RunDate.ToUniversalTime(),
+                    Notes = request.Notes,
+                    PaceMinPerKm = request.DurationMinutes / request.DistanceKm,
+                    PointsEarned = 0, // Calculated after updating streak
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                };
 
-            // 2. Recalculate streak
-            var streakResult = await _streakService.RecalculateStreakAsync(userId);
-            user.CurrentStreak = streakResult.CurrentStreak;
-            if (streakResult.LongestStreak > user.LongestStreak)
-            {
-                user.LongestStreak = streakResult.LongestStreak;
+                _context.Runs.Add(run);
+                await _context.SaveChangesAsync();
+
+                // 2. Recalculate streak
+                var streakResult = await _streakService.RecalculateStreakAsync(userId);
+                user.CurrentStreak = streakResult.CurrentStreak;
+                if (streakResult.LongestStreak > user.LongestStreak)
+                {
+                    user.LongestStreak = streakResult.LongestStreak;
+                }
+
+                // 3. Calculate points for this run
+                run.PointsEarned = _pointsService.CalculatePoints(run.DistanceKm, run.DurationMinutes, user.CurrentStreak);
+                
+                // 4. Update user denormalized stats
+                user.TotalRuns++;
+                user.TotalDistanceKm += run.DistanceKm;
+                user.TotalPoints += run.PointsEarned;
+                user.UpdatedAt = DateTime.UtcNow;
+
+                await _context.SaveChangesAsync();
+
+                // 5. Check and award badges
+                var newlyUnlockedBadges = await _badgeService.CheckAndAwardBadgesAsync(userId);
+
+                await transaction.CommitAsync();
+
+                return (MapToDto(run), newlyUnlockedBadges);
             }
-
-            // 3. Calculate points for this run
-            run.PointsEarned = _pointsService.CalculatePoints(run.DistanceKm, run.DurationMinutes, user.CurrentStreak);
-            
-            // 4. Update user denormalized stats
-            user.TotalRuns++;
-            user.TotalDistanceKm += run.DistanceKm;
-            user.TotalPoints += run.PointsEarned;
-            user.UpdatedAt = DateTime.UtcNow;
-
-            await _context.SaveChangesAsync();
-
-            // 5. Check and award badges
-            var newlyUnlockedBadges = await _badgeService.CheckAndAwardBadgesAsync(userId);
-
-            await transaction.CommitAsync();
-
-            return (MapToDto(run), newlyUnlockedBadges);
-        }
-        catch
-        {
-            await transaction.RollbackAsync();
-            throw;
-        }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[RunService] Error in LogRunAsync: {ex}");
+                await transaction.RollbackAsync();
+                throw;
+            }
+        });
     }
 
     public async Task<(RunDto Run, List<Badge> UnlockedBadges)?> UpdateRunAsync(Guid userId, Guid runId, UpdateRunRequest request)
     {
-        using var transaction = await _context.Database.BeginTransactionAsync();
-        try
+        var strategy = _context.Database.CreateExecutionStrategy();
+        return await strategy.ExecuteAsync(async () =>
         {
-            var run = await _context.Runs.FirstOrDefaultAsync(r => r.Id == runId && r.UserId == userId);
-            if (run == null) return null;
-
-            var user = await _context.Users.FindAsync(userId) 
-                ?? throw new KeyNotFoundException("User not found.");
-
-            // Update run values
-            run.DistanceKm = request.DistanceKm;
-            run.DurationMinutes = request.DurationMinutes;
-            run.PaceMinPerKm = request.DurationMinutes / request.DistanceKm;
-            run.RunDate = request.RunDate.ToUniversalTime();
-            run.Notes = request.Notes;
-            run.UpdatedAt = DateTime.UtcNow;
-
-            await _context.SaveChangesAsync();
-
-            // Recalculate user streak & stats
-            var streakResult = await _streakService.RecalculateStreakAsync(userId);
-            user.CurrentStreak = streakResult.CurrentStreak;
-            if (streakResult.LongestStreak > user.LongestStreak)
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
             {
-                user.LongestStreak = streakResult.LongestStreak;
+                var run = await _context.Runs.FirstOrDefaultAsync(r => r.Id == runId && r.UserId == userId);
+                if (run == null) return null;
+
+                var user = await _context.Users.FindAsync(userId) 
+                    ?? throw new KeyNotFoundException("User not found.");
+
+                // Update run values
+                run.DistanceKm = request.DistanceKm;
+                run.DurationMinutes = request.DurationMinutes;
+                run.PaceMinPerKm = request.DurationMinutes / request.DistanceKm;
+                run.RunDate = request.RunDate.ToUniversalTime();
+                run.Notes = request.Notes;
+                run.UpdatedAt = DateTime.UtcNow;
+
+                await _context.SaveChangesAsync();
+
+                // Recalculate user streak & stats
+                var streakResult = await _streakService.RecalculateStreakAsync(userId);
+                user.CurrentStreak = streakResult.CurrentStreak;
+                if (streakResult.LongestStreak > user.LongestStreak)
+                {
+                    user.LongestStreak = streakResult.LongestStreak;
+                }
+
+                // Recalculate this run's points
+                run.PointsEarned = _pointsService.CalculatePoints(run.DistanceKm, run.DurationMinutes, user.CurrentStreak);
+                await _context.SaveChangesAsync();
+
+                // Recalculate user denormalized stats to prevent drift
+                user.TotalRuns = await _context.Runs.CountAsync(r => r.UserId == userId);
+                user.TotalDistanceKm = await _context.Runs.Where(r => r.UserId == userId).SumAsync(r => r.DistanceKm);
+                
+                var baseRunPoints = await _context.Runs.Where(r => r.UserId == userId).SumAsync(r => r.PointsEarned);
+                var badgePoints = await _context.UserBadges
+                    .Where(ub => ub.UserId == userId)
+                    .Include(ub => ub.Badge)
+                    .SumAsync(ub => ub.Badge.PointsReward);
+                
+                user.TotalPoints = baseRunPoints + badgePoints;
+                user.UpdatedAt = DateTime.UtcNow;
+
+                await _context.SaveChangesAsync();
+
+                // Check if updates unlocked new badges
+                var newlyUnlockedBadges = await _badgeService.CheckAndAwardBadgesAsync(userId);
+
+                await transaction.CommitAsync();
+
+                return ((RunDto Run, List<Badge> UnlockedBadges)?)((MapToDto(run), newlyUnlockedBadges));
             }
-
-            // Recalculate this run's points
-            run.PointsEarned = _pointsService.CalculatePoints(run.DistanceKm, run.DurationMinutes, user.CurrentStreak);
-            await _context.SaveChangesAsync();
-
-            // Recalculate user denormalized stats to prevent drift
-            user.TotalRuns = await _context.Runs.CountAsync(r => r.UserId == userId);
-            user.TotalDistanceKm = await _context.Runs.Where(r => r.UserId == userId).SumAsync(r => r.DistanceKm);
-            
-            var baseRunPoints = await _context.Runs.Where(r => r.UserId == userId).SumAsync(r => r.PointsEarned);
-            var badgePoints = await _context.UserBadges
-                .Where(ub => ub.UserId == userId)
-                .Include(ub => ub.Badge)
-                .SumAsync(ub => ub.Badge.PointsReward);
-            
-            user.TotalPoints = baseRunPoints + badgePoints;
-            user.UpdatedAt = DateTime.UtcNow;
-
-            await _context.SaveChangesAsync();
-
-            // Check if updates unlocked new badges
-            var newlyUnlockedBadges = await _badgeService.CheckAndAwardBadgesAsync(userId);
-
-            await transaction.CommitAsync();
-
-            return (MapToDto(run), newlyUnlockedBadges);
-        }
-        catch
-        {
-            await transaction.RollbackAsync();
-            throw;
-        }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[RunService] Error in UpdateRunAsync: {ex}");
+                await transaction.RollbackAsync();
+                throw;
+            }
+        });
     }
 
     public async Task<bool> DeleteRunAsync(Guid userId, Guid runId)
     {
-        using var transaction = await _context.Database.BeginTransactionAsync();
-        try
+        var strategy = _context.Database.CreateExecutionStrategy();
+        return await strategy.ExecuteAsync(async () =>
         {
-            var run = await _context.Runs.FirstOrDefaultAsync(r => r.Id == runId && r.UserId == userId);
-            if (run == null) return false;
-
-            var user = await _context.Users.FindAsync(userId) 
-                ?? throw new KeyNotFoundException("User not found.");
-
-            _context.Runs.Remove(run);
-            await _context.SaveChangesAsync();
-
-            // Recalculate streak (excluding the deleted run, which is already removed from Context)
-            var streakResult = await _streakService.RecalculateStreakAsync(userId);
-            user.CurrentStreak = streakResult.CurrentStreak;
-            if (streakResult.LongestStreak > user.LongestStreak)
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
             {
-                user.LongestStreak = streakResult.LongestStreak;
+                var run = await _context.Runs.FirstOrDefaultAsync(r => r.Id == runId && r.UserId == userId);
+                if (run == null) return false;
+
+                var user = await _context.Users.FindAsync(userId) 
+                    ?? throw new KeyNotFoundException("User not found.");
+
+                _context.Runs.Remove(run);
+                await _context.SaveChangesAsync();
+
+                // Recalculate streak (excluding the deleted run, which is already removed from Context)
+                var streakResult = await _streakService.RecalculateStreakAsync(userId);
+                user.CurrentStreak = streakResult.CurrentStreak;
+                if (streakResult.LongestStreak > user.LongestStreak)
+                {
+                    user.LongestStreak = streakResult.LongestStreak;
+                }
+
+                // Recalculate user denormalized stats
+                user.TotalRuns = await _context.Runs.CountAsync(r => r.UserId == userId);
+                user.TotalDistanceKm = await _context.Runs.Where(r => r.UserId == userId).SumAsync(r => r.DistanceKm);
+                
+                var baseRunPoints = await _context.Runs.Where(r => r.UserId == userId).SumAsync(r => r.PointsEarned);
+                var badgePoints = await _context.UserBadges
+                    .Where(ub => ub.UserId == userId)
+                    .Include(ub => ub.Badge)
+                    .SumAsync(ub => ub.Badge.PointsReward);
+
+                user.TotalPoints = baseRunPoints + badgePoints;
+                user.UpdatedAt = DateTime.UtcNow;
+
+                await _context.SaveChangesAsync();
+
+                await transaction.CommitAsync();
+                return true;
             }
-
-            // Recalculate user denormalized stats
-            user.TotalRuns = await _context.Runs.CountAsync(r => r.UserId == userId);
-            user.TotalDistanceKm = await _context.Runs.Where(r => r.UserId == userId).SumAsync(r => r.DistanceKm);
-            
-            var baseRunPoints = await _context.Runs.Where(r => r.UserId == userId).SumAsync(r => r.PointsEarned);
-            var badgePoints = await _context.UserBadges
-                .Where(ub => ub.UserId == userId)
-                .Include(ub => ub.Badge)
-                .SumAsync(ub => ub.Badge.PointsReward);
-
-            user.TotalPoints = baseRunPoints + badgePoints;
-            user.UpdatedAt = DateTime.UtcNow;
-
-            await _context.SaveChangesAsync();
-
-            await transaction.CommitAsync();
-            return true;
-        }
-        catch
-        {
-            await transaction.RollbackAsync();
-            throw;
-        }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[RunService] Error in DeleteRunAsync: {ex}");
+                await transaction.RollbackAsync();
+                throw;
+            }
+        });
     }
 
     private static RunDto MapToDto(Run run)

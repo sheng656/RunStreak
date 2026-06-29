@@ -66,3 +66,22 @@ Phase 8 (Deployment) — fixing CORS configuration after switching from Vercel's
 - Created this prompt log.
 - Updated `plan.md` with deployment progress.
 - Updated `README.md` with live deployment URLs, filled in TODOs for tech stack and security measures.
+
+## Prompt 4
+
+> https://runstreak.sheng.nz/runs/new
+> Access to XMLHttpRequest at 'https://runstreak-api-msa.azurewebsites.net/api/runs' from origin 'https://runstreak.sheng.nz' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+> index-BODJQLLH.js:189  POST https://runstreak-api-msa.azurewebsites.net/api/runs net::ERR_FAILED 500 (Internal Server Error)
+> I hit this issue when logging a run.
+
+**Agent produced:**
+- Explained that the CORS preflight block was a side effect of a `500 Internal Server Error` (the server fails before CORS headers are added).
+- Enabled application filesystem logging on the Azure App Service.
+- Added temporary try-catch blocks to return detailed stack traces in the 500 response, then ran a test script that reproduced the issue:
+  `The configured execution strategy 'SqlServerRetryingExecutionStrategy' does not support user-initiated transactions. Use the execution strategy returned by 'DbContext.Database.CreateExecutionStrategy()' to execute all the operations in the transaction as a retriable unit.`
+- Identified the root cause: enabling `EnableRetryOnFailure()` in EF Core (to tolerate Azure SQL auto-pause cold starts) requires wrapping manual transaction blocks inside `IExecutionStrategy.ExecuteAsync()`.
+- Refactored `LogRunAsync`, `UpdateRunAsync`, and `DeleteRunAsync` in `RunService.cs` to wrap their transactions inside `strategy.ExecuteAsync()`.
+- Added safety checks in `BadgeService.cs` to handle potentially null or empty criteria types (e.g. `criteria.Type.ToLowerInvariant()`).
+- Reverted the temporary debugging stack trace responses from `RunsController.cs` to restore standard production response security.
+- Redeployed the updated backend API to Azure App Service and verified that registering a user and logging a run now succeeds cleanly with a `201 Created` status (returning 38 points and unlocking badges: "First Steps" and "5K Club").
+

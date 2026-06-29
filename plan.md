@@ -275,16 +275,16 @@ This file is the single source of truth for what's done, what's in progress, and
   - [x] Configure connection string via Azure App Service Configuration (not in code)
   - [x] Configure JWT signing key via App Service Configuration
   - [x] Configure CORS allowed origin (`https://runstreak.sheng.nz`, `http://localhost:5173`)
-  - [ ] Verify Scalar API docs accessible at `/scalar/v1`
+  - [x] Verify Scalar API docs accessible at `/scalar/v1`
 - [x] Frontend deployment to Vercel (Hobby tier):
   - [x] Set backend API URL as environment variable
   - [x] Verify build succeeds on Vercel
   - [x] Custom domain: `https://runstreak.sheng.nz`
-  - [ ] Test full auth flow against Azure backend
-- [ ] Smoke test on production:
-  - [ ] Register → login → log run → check points/streak → view leaderboard → logout
-  - [ ] Verify refresh token flow works cross-origin
-  - [ ] Verify CSRF token flow works
+  - [x] Test full auth flow against Azure backend
+- [x] Smoke test on production:
+  - [x] Register → login → log run → check points/streak → view leaderboard → logout
+  - [x] Verify refresh token flow works cross-origin
+  - [x] Verify CSRF token flow works
 - [x] Update README with live deployment URLs
 
 ---

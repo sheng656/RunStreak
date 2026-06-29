@@ -52,7 +52,7 @@ public class BadgeService(AppDbContext context) : IBadgeService
                     PropertyNameCaseInsensitive = true
                 });
 
-                if (criteria == null)
+                if (criteria == null || string.IsNullOrEmpty(criteria.Type))
                 {
                     continue;
                 }
