@@ -63,10 +63,12 @@ const EFFORT_LEVELS = [
 ]
 
 // ── Initial form state ───────────────────────────────────────────────────────
+const getTodayLocal = () => new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0]
+
 const initialForm = {
   distanceKm: '',
   durationMinutes: '',
-  runDate: new Date().toISOString().split('T')[0],
+  runDate: getTodayLocal(),
   notes: '',
   perceivedEffort: null as number | null,
 }
@@ -390,7 +392,7 @@ export default function LogRunPage() {
               type="date"
               value={form.runDate}
               onChange={(e) => updateField('runDate', e.target.value)}
-              max={new Date().toISOString().split('T')[0]}
+              max={getTodayLocal()}
               className={`input pl-9 ${importedFields.has('runDate') ? 'ring-1 ring-[hsl(var(--color-brand))]' : ''} ${errors.runDate ? 'input-error' : ''}`}
             />
             {importedFields.has('runDate') && (

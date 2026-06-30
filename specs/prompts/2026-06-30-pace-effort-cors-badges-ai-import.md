@@ -27,13 +27,13 @@ Comment: "OptionA"
 
 Selection:
 >Add placeholder: "Gemini": { "ApiKey": "YOUR_GEMINI_API_KEY_HERE", "Model": "gemini-2.0-flash-lite" }
-Comment: "3.1 Flash Lite，已经可以用3.1 Flash Lite模型了"
+Comment: "3.1 Flash Lite，it is available now"
 
 Selection:
 >bash# Backend: build and run existing tests to ensure no regressionscd backend/RunStreak.Api && dotnet buildcd backend/RunStreak.Tests && dotnet test# Frontend: build and run existing testscd frontend && npm run build && npm test
-Comment: "我的是powershell"
+Comment: "I use powershell"
 
-先修改一下计划
+modify the plan first
 ```
 
 **Agent Action:**
