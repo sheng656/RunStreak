@@ -119,7 +119,7 @@ export default function LogRunPage() {
     else if (dur > 1440) errs.durationMinutes = 'Maximum duration is 1440 minutes (24h)'
 
     if (!form.runDate) errs.runDate = 'Date is required'
-    else if (new Date(form.runDate) > new Date()) errs.runDate = 'Date cannot be in the future'
+    else if (form.runDate > getTodayLocal()) errs.runDate = 'Date cannot be in the future'
 
     if (form.notes.length > 500) errs.notes = 'Notes cannot exceed 500 characters'
 

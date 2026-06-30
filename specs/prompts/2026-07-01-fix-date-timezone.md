@@ -7,3 +7,9 @@ and now it is 10 am 1st July Auckland NZ, I can not chose the right date ,only c
 
 **Output:**
 Fixed a timezone bug in `LogRunPage.tsx` where `new Date().toISOString()` produced the UTC date (which was still the previous day in positive UTC offset regions like New Zealand). Replaced it with a timezone-adjusted local date string so the `max` attribute properly allows selecting the user's actual current local day.
+
+**Follow-up Prompt:**
+> I can chose 1July now ，but it says "Date cannot be in the future"
+
+**Follow-up Output:**
+Fixed the form validation logic (`validate()`) which was still comparing the selected date against a strict `new Date()` (UTC). Replaced the comparison with a simple lexicographical string comparison against the same timezone-adjusted local date string (`getTodayLocal()`), preventing valid local dates from being flagged as in the future.
