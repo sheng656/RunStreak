@@ -152,6 +152,9 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 
+app.MapGet("/api/health", () => Results.Ok(new { status = "healthy", timestamp = DateTime.UtcNow }))
+    .AllowAnonymous();
+
 // Seed database on startup
 using (var scope = app.Services.CreateScope())
 {

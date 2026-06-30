@@ -53,3 +53,4 @@ Thumbs.db
 .vercel
 .env*
 logs.zip
+.vscode/settings.json
