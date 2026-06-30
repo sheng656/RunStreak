@@ -155,13 +155,17 @@ app.MapControllers();
 app.MapGet("/api/health", () => Results.Ok(new { status = "healthy", timestamp = DateTime.UtcNow }))
     .AllowAnonymous();
 
-// Seed database on startup
+// Apply migrations and seed database on startup
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
     try
     {
         var dbContext = services.GetRequiredService<AppDbContext>();
+        
+        // Ensure pending migrations (like PerceivedEffort and Badge Rarity) are applied to Azure SQL
+        await dbContext.Database.MigrateAsync();
+        
         await DbSeeder.SeedBadgesAsync(dbContext);
     }
     catch (Exception ex)
