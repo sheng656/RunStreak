@@ -11,6 +11,9 @@ const usersApi = {
   getBadges: (userId: string) =>
     apiClient.get<UserBadge[]>(`/users/${userId}/badges`),
 
+  getBadgesWithProgress: () =>
+    apiClient.get<import('../types/api').BadgeWithProgress[]>('/users/me/badges-progress'),
+
   getStats: (userId: string) =>
     apiClient.get<UserStats>(`/users/${userId}/stats`),
 }

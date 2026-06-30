@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using RunStreak.Api.Data;
 using RunStreak.Api.DTOs.Users;
+using System.Text.Json;
 
 namespace RunStreak.Api.Services;
 
@@ -73,12 +74,121 @@ public class UserService(AppDbContext context) : IUserService
                 Description = ub.Badge.Description,
                 IconUrl = ub.Badge.IconUrl,
                 Category = ub.Badge.Category,
+                Rarity = ub.Badge.Rarity,
                 PointsReward = ub.Badge.PointsReward,
                 UnlockedAt = ub.UnlockedAt
             })
             .ToListAsync();
 
         return userBadges;
+    }
+
+    public async Task<List<BadgeWithProgressDto>> GetBadgesWithProgressAsync(Guid userId)
+    {
+        var user = await _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId);
+        if (user == null) return [];
+
+        var unlockedBadges = await _context.UserBadges
+            .AsNoTracking()
+            .Where(ub => ub.UserId == userId)
+            .ToDictionaryAsync(ub => ub.BadgeId, ub => ub.UnlockedAt);
+
+        var badges = await _context.Badges.AsNoTracking().ToListAsync();
+
+        var runs = await _context.Runs
+            .AsNoTracking()
+            .Where(r => r.UserId == userId)
+            .Select(r => new { r.DistanceKm, r.PaceMinPerKm })
+            .ToListAsync();
+
+        var result = new List<BadgeWithProgressDto>();
+
+        foreach (var badge in badges)
+        {
+            var isUnlocked = unlockedBadges.TryGetValue(badge.Id, out var unlockedAt);
+
+            decimal currentProgress = 0;
+            decimal targetThreshold = 0;
+            string progressLabel = string.Empty;
+
+            if (!string.IsNullOrWhiteSpace(badge.CriteriaJson))
+            {
+                try
+                {
+                    var criteria = JsonSerializer.Deserialize<BadgeCriteria>(badge.CriteriaJson, new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
+
+                    if (criteria != null && !string.IsNullOrEmpty(criteria.Type))
+                    {
+                        switch (criteria.Type.ToLowerInvariant())
+                        {
+                            case "total_runs":
+                                currentProgress = user.TotalRuns;
+                                targetThreshold = criteria.Threshold;
+                                progressLabel = $"{Math.Min(currentProgress, targetThreshold)} / {targetThreshold} runs";
+                                break;
+
+                            case "total_distance_km":
+                                currentProgress = user.TotalDistanceKm;
+                                targetThreshold = criteria.Threshold;
+                                progressLabel = $"{Math.Min(currentProgress, targetThreshold):F1} / {targetThreshold:F1} km";
+                                break;
+
+                            case "current_streak":
+                                currentProgress = user.CurrentStreak;
+                                targetThreshold = criteria.Threshold;
+                                progressLabel = $"{Math.Min(currentProgress, targetThreshold)} / {targetThreshold} days";
+                                break;
+
+                            case "single_run_distance_km":
+                                currentProgress = runs.Count > 0 ? runs.Max(r => r.DistanceKm) : 0;
+                                targetThreshold = criteria.Threshold;
+                                progressLabel = $"{Math.Min(currentProgress, targetThreshold):F1} / {targetThreshold:F1} km";
+                                break;
+
+                            case "pace_under":
+                                var eligibleRuns = runs.Where(r => r.DistanceKm >= criteria.MinDistanceKm).ToList();
+                                currentProgress = eligibleRuns.Count > 0 ? eligibleRuns.Min(r => r.PaceMinPerKm) : 99.9m;
+                                targetThreshold = criteria.PaceThreshold;
+                                progressLabel = isUnlocked
+                                    ? "Fast enough!"
+                                    : (currentProgress == 99.9m ? $"No run of {criteria.MinDistanceKm:F1}km yet" : $"Best: {currentProgress:F2} (target < {targetThreshold:F2})");
+                                break;
+
+                            case "distance_count":
+                                currentProgress = runs.Count(r => r.DistanceKm >= criteria.MinDistanceKm);
+                                targetThreshold = criteria.Count;
+                                progressLabel = $"{Math.Min(currentProgress, targetThreshold)} / {targetThreshold} runs";
+                                break;
+                        }
+                    }
+                }
+                catch (JsonException)
+                {
+                    // Ignore malformed JSON
+                }
+            }
+
+            result.Add(new BadgeWithProgressDto
+            {
+                Id = badge.Id,
+                Name = badge.Name,
+                Description = badge.Description,
+                IconUrl = badge.IconUrl,
+                Category = badge.Category,
+                Rarity = badge.Rarity,
+                PointsReward = badge.PointsReward,
+                IsUnlocked = isUnlocked,
+                UnlockedAt = isUnlocked ? unlockedAt : null,
+                CurrentProgress = currentProgress,
+                TargetThreshold = targetThreshold,
+                ProgressLabel = progressLabel
+            });
+        }
+
+        return result.OrderBy(b => b.Category).ThenBy(b => b.Rarity).ToList();
     }
 
     public async Task<UserStatsDto?> GetUserStatsAsync(Guid userId)

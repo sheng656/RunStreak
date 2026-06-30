@@ -13,6 +13,7 @@ import DashboardPage from './pages/DashboardPage'
 import RunHistoryPage from './pages/RunHistoryPage'
 import LogRunPage from './pages/LogRunPage'
 import BadgesPage from './pages/BadgesPage'
+import BadgeCelebrationPage from './pages/BadgeCelebrationPage'
 import LeaderboardPage from './pages/LeaderboardPage'
 import ProfilePage from './pages/ProfilePage'
 import NotFoundPage from './pages/NotFoundPage'
@@ -77,6 +78,15 @@ function App() {
           <Route path="leaderboard" element={<LeaderboardPage />} />
           <Route path="profile" element={<ProfilePage />} />
         </Route>
+
+        <Route
+          path="/badges/celebration"
+          element={
+            <ProtectedRoute>
+              <BadgeCelebrationPage />
+            </ProtectedRoute>
+          }
+        />
 
         {/* 404 Route */}
         <Route path="*" element={<NotFoundPage />} />

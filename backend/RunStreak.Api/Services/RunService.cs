@@ -68,6 +68,7 @@ public class RunService(
                     DurationMinutes = request.DurationMinutes,
                     RunDate = request.RunDate.ToUniversalTime(),
                     Notes = request.Notes,
+                    PerceivedEffort = request.PerceivedEffort,
                     PaceMinPerKm = request.DurationMinutes / request.DistanceKm,
                     PointsEarned = 0, // Calculated after updating streak
                     CreatedAt = DateTime.UtcNow,
@@ -132,6 +133,7 @@ public class RunService(
                 run.PaceMinPerKm = request.DurationMinutes / request.DistanceKm;
                 run.RunDate = request.RunDate.ToUniversalTime();
                 run.Notes = request.Notes;
+                run.PerceivedEffort = request.PerceivedEffort;
                 run.UpdatedAt = DateTime.UtcNow;
 
                 await _context.SaveChangesAsync();
@@ -243,6 +245,7 @@ public class RunService(
             RunDate = run.RunDate,
             Notes = run.Notes,
             PointsEarned = run.PointsEarned,
+            PerceivedEffort = run.PerceivedEffort,
             CreatedAt = run.CreatedAt,
             UpdatedAt = run.UpdatedAt
         };

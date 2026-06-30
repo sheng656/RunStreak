@@ -63,6 +63,19 @@ public class UsersController(IUserService userService) : ControllerBase
         return Ok(badges);
     }
 
+    [HttpGet("me/badges-progress")]
+    public async Task<IActionResult> GetCurrentUserBadgesWithProgress()
+    {
+        var userId = GetUserId();
+        if (userId == Guid.Empty)
+        {
+            return Unauthorized();
+        }
+
+        var badges = await _userService.GetBadgesWithProgressAsync(userId);
+        return Ok(badges);
+    }
+
     [HttpGet("{id:guid}/stats")]
     public async Task<IActionResult> GetUserStats(Guid id)
     {

@@ -1,8 +1,8 @@
 # RunStreak — Project Plan (LIVE)
 
-> **Last updated:** 2026-06-29
-> **Current focus:** Phase 8 — Deployment (CORS fix, backend redeployed, smoke testing next)
-> **Overall status:** ✅ Phase 0-7 complete, Phase 8 in progress
+> **Last updated:** 2026-06-30
+> **Current focus:** Phase 10 — Submission Preparation (All core features and advanced requirements complete)
+> **Overall status:** ✅ Phase 0-8 complete, Phase 10 in progress
 
 This file is the single source of truth for what's done, what's in progress, and what's next. Agents must read it at the start of every session and update it at the end.
 
@@ -213,14 +213,20 @@ This file is the single source of truth for what's done, what's in progress, and
 - [x] Run logging form (distance, duration, date, notes)
   - Client-side validation matching backend rules
   - Success feedback with points earned + any badges unlocked
+  - [x] 5-level Rate of Perceived Exertion (RPE) difficulty selector
+  - [x] AI-powered screenshot OCR run import (multimodal Gemini 3.1 Flash Lite)
+  - [x] Pace preview and display formatted as standard runner-friendly M:SS/km notation
 - [x] Run history list (paginated, sortable by date/distance/duration)
+  - [x] Uses formatted pace notation
 - [x] Individual run list deletion with confirmation
 
 ### 5C — Badges & Achievements
 
-- [x] Badge gallery grid (all badges, category filters)
-- [x] Unlocked badge rendering and details
+- [x] Badge gallery grid (all badges, category and rarity filters)
+- [x] Unlocked badge rendering and details with game rarity tier styling
 - [x] "New badge unlocked!" feedback in run submission response
+- [x] Progress bars for locked badges showing user's distance/count/streak toward next unlock
+- [x] Dedicated full-screen celebration page with canvas-confetti bursts and rarity-colored glowing animations
 
 ### 5D — Leaderboard
 
@@ -365,7 +371,8 @@ Phase 0 (scaffold)
 |---|----------|--------|-----|
 | 1 | Split-storage JWT (access in memory, refresh in HttpOnly cookie) | Decided | `specs/decisions/001-split-storage-jwt.md` |
 | 2 | Rate limiting strategy (fixed window for login, sliding for submissions) | Decided | `specs/decisions/002-rate-limiting-strategy.md` |
-| 3 | Password hashing: ASP.NET Core Identity `PasswordHasher<T>` (PBKDF2) | Decided | Documented in AGENTS.md §5.2 |
-| 4 | Points formula and streak rules | Pending | To be decided during Phase 2B |
-| 5 | Badge definitions and unlock criteria | Pending | To be decided during Phase 2B |
-| 6 | Frontend visual identity / design system | Pending | To be decided during Phase 4/5 |
+| 3 | Perceived effort rating (RPE) 1-5 scale on Runs | Decided | `specs/decisions/003-perceived-effort-rating.md` |
+| 4 | Badge rarity and cumulative progression system (48 badges) | Decided | `specs/decisions/004-badge-rarity-system.md` |
+| 5 | AI-powered screenshot OCR import via Gemini | Decided | `specs/decisions/005-ai-screenshot-import.md` |
+| 6 | Password hashing: ASP.NET Core Identity `PasswordHasher<T>` (PBKDF2) | Decided | Documented in AGENTS.md §5.2 |
+| 7 | Frontend visual identity / design system | Decided | Tailwind CSS v4.3 + modern glassmorphism |

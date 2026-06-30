@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using RunStreak.Api.Data;
 
@@ -11,9 +12,11 @@ using RunStreak.Api.Data;
 namespace RunStreak.Api.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260630034054_AddPerceivedEffort")]
+    partial class AddPerceivedEffort
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -57,13 +60,6 @@ namespace RunStreak.Api.Migrations
 
                     b.Property<int>("PointsReward")
                         .HasColumnType("int");
-
-                    b.Property<string>("Rarity")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)")
-                        .HasDefaultValue("common");
 
                     b.HasKey("Id");
 

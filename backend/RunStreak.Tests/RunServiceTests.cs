@@ -69,13 +69,13 @@ public class RunServiceTests
         Assert.Equal(5.0m, dbUser.TotalDistanceKm);
         Assert.Equal(1, dbUser.CurrentStreak);
         
-        // User points: 35 (from run) + 50 (First Steps badge) + 100 (5K Club badge) = 185
+        // User points: 35 (from run) + 50 (First Steps badge) + 100 (5K Finisher badge) = 185
         Assert.Equal(185, dbUser.TotalPoints);
 
-        // First Steps and 5K Club badges should be unlocked
+        // First Steps and 5K Finisher badges should be unlocked
         Assert.Equal(2, newlyUnlockedBadges.Count);
         Assert.Contains(newlyUnlockedBadges, b => b.Name == "First Steps");
-        Assert.Contains(newlyUnlockedBadges, b => b.Name == "5K Club");
+        Assert.Contains(newlyUnlockedBadges, b => b.Name == "5K Finisher");
     }
 
     [Fact]
@@ -135,11 +135,11 @@ public class RunServiceTests
         Assert.NotNull(dbUser);
         Assert.Equal(6.0m, dbUser.TotalDistanceKm);
 
-        // Unlocked badges: Should unlock "5K Club" (First Steps was unlocked in LogRunAsync)
+        // Unlocked badges: Should unlock "5K Finisher" (First Steps was unlocked in LogRunAsync)
         Assert.Single(unlockedBadges);
-        Assert.Equal("5K Club", unlockedBadges[0].Name);
+        Assert.Equal("5K Finisher", unlockedBadges[0].Name);
 
-        // Total Points: 40 (Run Points) + 50 (First Steps) + 100 (5K Club) = 190
+        // Total Points: 40 (Run Points) + 50 (First Steps) + 100 (5K Finisher) = 190
         Assert.Equal(190, dbUser.TotalPoints);
     }
 

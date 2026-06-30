@@ -12,9 +12,10 @@ namespace RunStreak.Api.Controllers;
 [Route("api/[controller]")]
 [EnableCors("Frontend")]
 [Authorize]
-public class RunsController(IRunService runService) : ControllerBase
+public class RunsController(IRunService runService, IScreenshotImportService screenshotImportService) : ControllerBase
 {
     private readonly IRunService _runService = runService;
+    private readonly IScreenshotImportService _screenshotImportService = screenshotImportService;
 
     [HttpPost]
     [EnableRateLimiting("run-submit")]
@@ -34,10 +35,43 @@ public class RunsController(IRunService runService) : ControllerBase
         var (run, newlyUnlockedBadges) = await _runService.LogRunAsync(userId, request);
 
         return CreatedAtAction(
-            nameof(GetRunById), 
-            new { id = run.Id }, 
+            nameof(GetRunById),
+            new { id = run.Id },
             new { run, newlyUnlockedBadges }
         );
+    }
+
+    /// <summary>
+    /// AI-powered screenshot OCR import. Accepts an image upload and returns
+    /// extracted run data (distance, duration, date, optional enrichment).
+    /// Users can review and confirm the data before logging.
+    /// </summary>
+    [HttpPost("import-screenshot")]
+    [EnableRateLimiting("run-submit")]
+    [Consumes("multipart/form-data")]
+    public async Task<IActionResult> ImportScreenshot(IFormFile file, CancellationToken cancellationToken)
+    {
+        if (file == null || file.Length == 0)
+        {
+            return BadRequest(new { message = "No file was uploaded." });
+        }
+
+        // Max 10MB — Gemini free tier has per-request payload limits
+        if (file.Length > 10 * 1024 * 1024)
+        {
+            return BadRequest(new { message = "Image must be under 10MB." });
+        }
+
+        if (!file.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
+        {
+            return BadRequest(new { message = "File must be an image (PNG, JPG, WEBP, etc.)." });
+        }
+
+        using var stream = file.OpenReadStream();
+        var result = await _screenshotImportService.ImportFromScreenshotAsync(
+            stream, file.ContentType, cancellationToken);
+
+        return Ok(result);
     }
 
     [HttpGet]

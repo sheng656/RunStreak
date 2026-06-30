@@ -204,16 +204,17 @@ public class GamificationTests
         var newlyUnlocked = await badgeService.CheckAndAwardBadgesAsync(user.Id);
 
         // Assert
-        // Should unlock "First Steps" (runs >= 1), "Getting Started" (runs >= 5), and "5K Club" (single run distance >= 5km)
-        Assert.Equal(3, newlyUnlocked.Count);
+        // Should unlock "First Steps" (runs >= 1), "Warming Up" (runs >= 5), "5K Finisher" (single run distance >= 5km), and "10K Club" (total distance >= 10km)
+        Assert.Equal(4, newlyUnlocked.Count);
         Assert.Contains(newlyUnlocked, b => b.Name == "First Steps");
-        Assert.Contains(newlyUnlocked, b => b.Name == "Getting Started");
-        Assert.Contains(newlyUnlocked, b => b.Name == "5K Club");
+        Assert.Contains(newlyUnlocked, b => b.Name == "Warming Up");
+        Assert.Contains(newlyUnlocked, b => b.Name == "5K Finisher");
+        Assert.Contains(newlyUnlocked, b => b.Name == "10K Club");
 
         var dbUser = await context.Users.FindAsync(user.Id);
         Assert.NotNull(dbUser);
-        // Total points should be: 50 (First Steps) + 100 (Getting Started) + 100 (5K Club) = 250
-        Assert.Equal(250, dbUser.TotalPoints);
+        // Total points should be: 50 (First Steps) + 100 (Warming Up) + 100 (5K Finisher) + 50 (10K Club) = 300
+        Assert.Equal(300, dbUser.TotalPoints);
     }
 
     [Fact]
@@ -241,6 +242,44 @@ public class GamificationTests
         // Second award check: should return 0 new badges
         var secondAward = await badgeService.CheckAndAwardBadgesAsync(user.Id);
         Assert.Empty(secondAward);
+    }
+
+    [Fact]
+    public async Task CheckAndAwardBadgesAsync_ShouldAwardDistanceCountBadge_WhenCountThresholdReached()
+    {
+        // Arrange
+        using var context = CreateContext();
+        await DbSeeder.SeedBadgesAsync(context);
+
+        var badgeService = new BadgeService(context);
+        var user = new User
+        {
+            Username = "marathoner",
+            Email = "marathoner@example.com",
+            TotalRuns = 5,
+            TotalDistanceKm = 25m
+        };
+        context.Users.Add(user);
+
+        // Add 5 separate runs of >= 5km
+        for (int i = 0; i < 5; i++)
+        {
+            context.Runs.Add(new Run
+            {
+                UserId = user.Id,
+                DistanceKm = 5.2m,
+                DurationMinutes = 26m,
+                RunDate = DateTime.UtcNow.AddDays(-i)
+            });
+        }
+        await context.SaveChangesAsync();
+
+        // Act
+        var newlyUnlocked = await badgeService.CheckAndAwardBadgesAsync(user.Id);
+
+        // Assert
+        // Should unlock "5K × 5" badge since there are exactly 5 runs >= 5km!
+        Assert.Contains(newlyUnlocked, b => b.Name == "5K × 5");
     }
 
     #endregion

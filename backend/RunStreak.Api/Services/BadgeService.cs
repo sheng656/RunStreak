@@ -11,6 +11,9 @@ public class BadgeCriteria
     public decimal Threshold { get; set; }
     public decimal PaceThreshold { get; set; }
     public decimal MinDistanceKm { get; set; }
+
+    // For "distance_count": user must have completed at least Count runs of >= MinDistanceKm
+    public int Count { get; set; }
 }
 
 public class BadgeService(AppDbContext context) : IBadgeService
@@ -79,10 +82,18 @@ public class BadgeService(AppDbContext context) : IBadgeService
 
                     case "pace_under":
                         // Pace logic: PaceMinPerKm < PaceThreshold AND DistanceKm >= MinDistanceKm
-                        isUnlocked = await _context.Runs.AnyAsync(r => 
-                            r.UserId == userId && 
-                            r.DistanceKm >= criteria.MinDistanceKm && 
+                        isUnlocked = await _context.Runs.AnyAsync(r =>
+                            r.UserId == userId &&
+                            r.DistanceKm >= criteria.MinDistanceKm &&
                             r.PaceMinPerKm < criteria.PaceThreshold);
+                        break;
+
+                    case "distance_count":
+                        // User must have completed at least Count separate runs of >= MinDistanceKm.
+                        // Used for tiered badges like "5K x 10 times", "5K x 20 times", etc.
+                        var qualifyingRunCount = await _context.Runs
+                            .CountAsync(r => r.UserId == userId && r.DistanceKm >= criteria.MinDistanceKm);
+                        isUnlocked = qualifyingRunCount >= criteria.Count;
                         break;
                 }
 
@@ -98,15 +109,15 @@ public class BadgeService(AppDbContext context) : IBadgeService
 
                     _context.UserBadges.Add(userBadge);
 
-                    // Award points
+                    // Award bonus points for the badge
                     user.TotalPoints += badge.PointsReward;
-                    
+
                     newlyUnlockedBadges.Add(badge);
                 }
             }
             catch (JsonException)
             {
-                // In case of any deserialization issues, log or ignore the badge check
+                // Silently ignore malformed badge criteria — badge definitions are seeded data
             }
         }
 

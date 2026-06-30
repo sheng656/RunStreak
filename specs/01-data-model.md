@@ -37,6 +37,7 @@ erDiagram
         DateTime RunDate
         string Notes "nullable, max 500 chars"
         int PointsEarned
+        int PerceivedEffort "nullable, 1-5 RPE scale"
         DateTime CreatedAt
         DateTime UpdatedAt
     }
@@ -47,6 +48,7 @@ erDiagram
         string Description
         string IconUrl
         string Category "distance, streak, milestone, special"
+        string Rarity "common, rare, epic, legendary, heroic"
         string CriteriaJson "structured unlock condition"
         int PointsReward
         DateTime CreatedAt
@@ -122,13 +124,13 @@ Achievement definitions. Seeded once, rarely changed. The `CriteriaJson` column 
 | Description | string(500) | Required | e.g. "Log your first run" |
 | IconUrl | string(512) | Required | Badge icon asset URL |
 | Category | string(50) | Required | One of: distance, streak, milestone, special |
+| Rarity | string(20) | Required, Default 'common' | One of: common, rare, epic, legendary, heroic |
 | CriteriaJson | string | Required | JSON, e.g. `{"type":"total_runs","threshold":1}` |
 | PointsReward | int | Required, ≥ 0 | Bonus points on unlock |
 | CreatedAt | DateTime | Required | UTC |
 
 **Example badge criteria:**
 
-```json
 // First Steps — log your first run
 { "type": "total_runs", "threshold": 1 }
 
@@ -143,6 +145,9 @@ Achievement definitions. Seeded once, rarely changed. The `CriteriaJson` column 
 
 // Speed Demon — pace under 5 min/km on a 5km+ run
 { "type": "pace_under", "pace_threshold": 5.0, "min_distance_km": 5.0 }
+
+// 5K × 10 — complete 5km run at least 10 times
+{ "type": "distance_count", "min_distance_km": 5.0, "count": 10 }
 ```
 
 ### UserBadges
@@ -188,23 +193,6 @@ Stores hashed refresh tokens for the split-storage JWT auth flow. See `specs/dec
 | RefreshTokens | TokenHash | Unique | Token lookup on refresh |
 | RefreshTokens | UserId | Non-unique | Revoke all tokens for a user on logout |
 
-## Seed Data — Initial Badges
+## Seed Data — Initial Badges (48-badge Overhaul)
 
-The following badges will be seeded on first migration / app startup:
-
-| Name | Category | Criteria | Points |
-|------|----------|----------|--------|
-| First Steps | milestone | `total_runs >= 1` | 50 |
-| Getting Started | milestone | `total_runs >= 5` | 100 |
-| Dedicated Runner | milestone | `total_runs >= 25` | 250 |
-| Centurion | milestone | `total_runs >= 100` | 500 |
-| 5K Club | distance | `single_run_distance_km >= 5` | 100 |
-| 10K Club | distance | `single_run_distance_km >= 10` | 200 |
-| Half Marathon | distance | `single_run_distance_km >= 21.1` | 500 |
-| Marathon | distance | `single_run_distance_km >= 42.2` | 1000 |
-| Week Warrior | streak | `current_streak >= 7` | 200 |
-| Fortnight Force | streak | `current_streak >= 14` | 400 |
-| Monthly Master | streak | `current_streak >= 30` | 1000 |
-| Century Club | distance | `total_distance_km >= 100` | 500 |
-| 500K Explorer | distance | `total_distance_km >= 500` | 1000 |
-| Speed Demon | special | `pace < 5.0 AND distance >= 5km` | 300 |
+The system seeds 48 distinct badges across 5 rarity tiers. Refer to `DbSeeder.cs` for the complete list of names, criteria (including the new `distance_count` type for 5K/10K ladders), and reward points. Every badge is mapped to a game rarity tier (Common, Rare, Epic, Legendary, Heroic).
