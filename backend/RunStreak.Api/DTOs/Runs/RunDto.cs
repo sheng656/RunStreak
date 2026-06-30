@@ -10,6 +10,7 @@ public class RunDto
     public DateTime RunDate { get; set; }
     public string? Notes { get; set; }
     public int PointsEarned { get; set; }
+    public int? PerceivedEffort { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
 }

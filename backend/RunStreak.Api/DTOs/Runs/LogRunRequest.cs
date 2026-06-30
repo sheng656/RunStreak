@@ -18,6 +18,10 @@ public class LogRunRequest
 
     [StringLength(500, ErrorMessage = "Notes cannot exceed 500 characters.")]
     public string? Notes { get; set; }
+
+    // RPE scale 1–5 (optional). 1=Very Easy, 2=Easy, 3=Moderate, 4=Hard, 5=Very Hard.
+    [Range(1, 5, ErrorMessage = "Perceived effort must be between 1 (Very Easy) and 5 (Very Hard).")]
+    public int? PerceivedEffort { get; set; }
 }
 
 public class PastOrPresentAttribute : ValidationAttribute

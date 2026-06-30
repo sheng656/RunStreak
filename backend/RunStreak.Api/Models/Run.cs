@@ -13,6 +13,10 @@ public class Run
     public DateTime RunDate { get; set; }
     public string? Notes { get; set; }
 
+    // RPE (Rate of Perceived Exertion) scale 1–5. Optional — users may skip it.
+    // 1=Very Easy, 2=Easy, 3=Moderate, 4=Hard, 5=Very Hard
+    public int? PerceivedEffort { get; set; }
+
     // Calculated by PointsService at creation time and stored to preserve
     // the historical record even if the points formula changes later.
     public int PointsEarned { get; set; }
