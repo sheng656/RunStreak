@@ -1,7 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
 import { Link } from 'react-router-dom'
-import {
-  MapPin, Timer, Zap, Plus, ChevronLeft, ChevronRight,
+import { MapPin, Timer, Zap, Plus, ChevronLeft, ChevronRight,
   Calendar, Trash2,
 } from 'lucide-react'
 import runsApi from '../api/runs'
@@ -9,6 +8,7 @@ import LoadingSpinner from '../components/ui/LoadingSpinner'
 import EmptyState from '../components/ui/EmptyState'
 import toast from 'react-hot-toast'
 import type { Run } from '../types/api'
+import { formatPace } from '../utils/formatPace'
 
 export default function RunHistoryPage() {
   const [runs, setRuns] = useState<Run[]>([])
@@ -124,7 +124,7 @@ export default function RunHistoryPage() {
                         <Timer size={12} /> Pace
                       </div>
                       <p className="text-sm font-semibold text-[hsl(var(--color-text))]">
-                        {Number(run.paceMinPerKm).toFixed(2)} min/km
+                        {formatPace(run.paceMinPerKm)}
                       </p>
                     </div>
                     <div>

@@ -21,6 +21,8 @@ builder.Services.AddScoped<IBadgeService, BadgeService>();
 builder.Services.AddScoped<ILeaderboardService, LeaderboardService>();
 builder.Services.AddScoped<IRunService, RunService>();
 builder.Services.AddScoped<IUserService, UserService>();
+// AI screenshot import via Google Gemini (Google.GenAI + Microsoft.Extensions.AI)
+builder.Services.AddScoped<IScreenshotImportService, ScreenshotImportService>();
 
 // ─── Controllers ────────────────────────────────────────────────────────────
 builder.Services.AddControllers();
@@ -139,6 +141,11 @@ app.MapScalarApiReference(options =>
 });
 
 app.UseHttpsRedirection();
+
+// CORS must be applied before auth and before any middleware that might
+// generate an error response (like the exception handler). This ensures that
+// CORS headers appear on ALL responses — including 4xx/5xx — so the browser
+// does not misreport validation errors as CORS failures.
 app.UseCors("Frontend");
 app.UseRateLimiter();
 app.UseAuthentication();

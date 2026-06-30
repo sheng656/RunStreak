@@ -12,6 +12,12 @@ public class Badge
     public string IconUrl { get; set; } = string.Empty;
 
     /// <summary>
+    /// Rarity tier: "common", "rare", "epic", "legendary", "heroic".
+    /// Inspired by game achievement rarity systems.
+    /// </summary>
+    public string Rarity { get; set; } = "common";
+
+    /// <summary>
     /// Category for grouping in the UI: "distance", "streak", "milestone", "special"
     /// </summary>
     public string Category { get; set; } = string.Empty;

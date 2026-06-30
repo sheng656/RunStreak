@@ -5,6 +5,7 @@ import type {
   UpdateRunRequest,
   LogRunResponse,
   RunsListResponse,
+  ScreenshotImportResponse,
 } from '../types/api'
 
 const runsApi = {
@@ -24,6 +25,17 @@ const runsApi = {
 
   delete: (id: string) =>
     apiClient.delete(`/runs/${id}`),
+
+  // AI-powered screenshot OCR import.
+  // Sends a multipart/form-data request with the image; the backend calls
+  // Gemini to extract run data and returns a structured ScreenshotImportResponse.
+  importScreenshot: (file: File) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    return apiClient.post<ScreenshotImportResponse>('/runs/import-screenshot', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+  },
 }
 
 export default runsApi

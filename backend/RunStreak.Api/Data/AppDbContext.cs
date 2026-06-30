@@ -64,6 +64,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             entity.Property(b => b.Description).HasMaxLength(500).IsRequired();
             entity.Property(b => b.IconUrl).HasMaxLength(512).IsRequired();
             entity.Property(b => b.Category).HasMaxLength(50).IsRequired();
+            entity.Property(b => b.Rarity).HasMaxLength(20).IsRequired().HasDefaultValue("common");
         });
 
         // ── UserBadges ──────────────────────────────────────────────────────
