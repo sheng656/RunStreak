@@ -30,7 +30,10 @@ public class PastOrPresentAttribute : ValidationAttribute
     {
         if (value is DateTime dateTime)
         {
-            if (dateTime > DateTime.UtcNow.AddMinutes(5)) // Allow 5 minutes of clock skew
+            // Allow up to +14 hours for timezone differences (e.g., Kiribati, New Zealand)
+            // If the user's local date is ahead of UTC, we shouldn't reject it as 'future'.
+            var maxAllowedDate = DateTime.UtcNow.AddHours(14).Date;
+            if (dateTime.Date > maxAllowedDate)
             {
                 return new ValidationResult(ErrorMessage ?? "Date cannot be in the future.");
             }
