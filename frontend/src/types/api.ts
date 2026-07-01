@@ -122,6 +122,9 @@ export interface RegisterRequest {
 
 export interface AuthResponse {
   accessToken: string
+  // Refresh token returned in the response body; stored in localStorage by the client
+  // for session persistence across page reloads.
+  refreshToken: string
   user: {
     id: string
     username: string

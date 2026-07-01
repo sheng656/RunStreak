@@ -5,6 +5,7 @@ import { useThemeStore } from './stores/themeStore'
 import { useAuthStore } from './stores/authStore'
 import authApi from './api/auth'
 import usersApi from './api/users'
+import { getStoredRefreshToken, setStoredRefreshToken } from './api/client'
 
 // Pages
 import LoginPage from './pages/LoginPage'
@@ -32,20 +33,29 @@ function App() {
     setTheme(theme)
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Silent refresh on mount — attempt to restore session from the HttpOnly
-  // refresh cookie. If it succeeds, the user stays logged in across page reloads
-  // without storing the access token anywhere persistent.
+  // Silent refresh on mount — attempt to restore session from the stored refresh token.
+  // Reads from localStorage: if no token is present, the user needs to log in.
+  // On success: saves the rotated refresh token back to localStorage, restores access token in memory.
   useEffect(() => {
     async function attemptSilentRefresh() {
+      const storedRefreshToken = getStoredRefreshToken()
+      if (!storedRefreshToken) {
+        // No session to restore — skip the network call
+        setLoading(false)
+        return
+      }
+
       try {
-        const res = await authApi.refresh()
+        const res = await authApi.refresh(storedRefreshToken)
+        // Persist rotated refresh token (old one is now revoked server-side)
+        setStoredRefreshToken(res.data.refreshToken)
         setAccessToken(res.data.accessToken)
-        
+
         // Fetch user profile after successful refresh
         const userRes = await usersApi.getMe()
         setUser(userRes.data)
       } catch {
-        // No valid session — user needs to log in
+        // Refresh token invalid or expired — user needs to log in
         clearAuth()
       } finally {
         setLoading(false)

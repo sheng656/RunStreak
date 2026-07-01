@@ -44,9 +44,10 @@ builder.Services.AddDbContext<AppDbContext>(options =>
         }));
 
 // ─── JWT Authentication ───────────────────────────────────────────────────────
-// Access token lives in memory on the client; only the refresh cookie touches
-// the HttpOnly cookie path. This middleware validates the Bearer token on every
-// protected request (iss, aud, exp validation is on by default — do NOT disable).
+// Access token lives in memory on the client (Zustand authStore).
+// Refresh token lives in localStorage — allows session restoration on page reload.
+// This middleware validates the Bearer token on every protected request
+// (iss, aud, exp validation is on by default — do NOT disable).
 var jwtSettings = builder.Configuration.GetSection("Jwt");
 var jwtKey = jwtSettings["Key"]
     ?? throw new InvalidOperationException("JWT signing key is not configured.");
@@ -70,10 +71,9 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 builder.Services.AddAuthorization();
 
 // ─── CORS ────────────────────────────────────────────────────────────────────
-// Explicit allow-list (Vercel frontend URL only). AllowCredentials() is required
-// for the HttpOnly refresh cookie to be sent cross-origin.
-// NEVER use a wildcard origin with AllowCredentials — it is rejected by browsers
-// and is a security misconfiguration.
+// Explicit allow-list (Vercel frontend URL only).
+// Bearer-only auth: no cookies cross origins, so AllowCredentials() is not needed.
+// NEVER use a wildcard origin — use explicit origins only.
 var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
     ?? ["http://localhost:5173"]; // Vite dev server default as fallback
 
@@ -84,8 +84,7 @@ builder.Services.AddCors(options =>
         policy
             .WithOrigins(allowedOrigins)
             .AllowAnyHeader()
-            .AllowAnyMethod()
-            .AllowCredentials(); // required for refresh cookie
+            .AllowAnyMethod();
     });
 });
 

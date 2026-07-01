@@ -1,6 +1,6 @@
 # RunStreak — Project Plan (LIVE)
 
-> **Last updated:** 2026-06-30
+> **Last updated:** 2026-07-01
 > **Current focus:** Phase 10 — Submission Preparation (All core features and advanced requirements complete)
 > **Overall status:** ✅ Phase 0-8 complete, Phase 10 in progress
 
@@ -62,11 +62,8 @@ This file is the single source of truth for what's done, what's in progress, and
 - [x] Access token: short-lived (15 min), signed with key from config, includes `sub`, `iss`, `aud`, `exp`
 - [x] Refresh token: rotate-on-use, stored hashed (SHA-256) in `RefreshTokens` table
   - Set as `HttpOnly`, `Secure`, `SameSite=Strict` cookie, `Path=/api/auth/refresh`
-- [x] Double-submit CSRF token:
-  - On login/refresh: server sets non-HttpOnly `csrf_token` cookie
-  - Frontend reads cookie, echoes as `X-CSRF-Token` header on refresh calls
-  - Server validates header matches cookie
-- [x] CORS: explicit allow-list (Vercel origin only), `AllowCredentials()`, no wildcard
+- [x] Double-submit CSRF token: ~~removed~~ — superseded by ADR 006 (2026-07-01). Simplified to bearer-only auth; refresh token now in localStorage (body-based), no cookies.
+- [x] CORS: explicit allow-list (Vercel origin only), no wildcard. `AllowCredentials()` removed (no cookies needed)
 - [x] JWT validation middleware: validate `iss`, `aud`, `exp` on every protected request
 - [x] Create ADR: `specs/decisions/001-split-storage-jwt.md`
 
@@ -369,10 +366,11 @@ Phase 0 (scaffold)
 
 | # | Decision | Status | ADR |
 |---|----------|--------|-----|
-| 1 | Split-storage JWT (access in memory, refresh in HttpOnly cookie) | Decided | `specs/decisions/001-split-storage-jwt.md` |
+| 1 | Split-storage JWT (access in memory, refresh in HttpOnly cookie) | Superseded | `specs/decisions/001-split-storage-jwt.md` |
 | 2 | Rate limiting strategy (fixed window for login, sliding for submissions) | Decided | `specs/decisions/002-rate-limiting-strategy.md` |
 | 3 | Perceived effort rating (RPE) 1-5 scale on Runs | Decided | `specs/decisions/003-perceived-effort-rating.md` |
 | 4 | Badge rarity and cumulative progression system (48 badges) | Decided | `specs/decisions/004-badge-rarity-system.md` |
 | 5 | AI-powered screenshot OCR import via Gemini | Decided | `specs/decisions/005-ai-screenshot-import.md` |
 | 6 | Password hashing: ASP.NET Core Identity `PasswordHasher<T>` (PBKDF2) | Decided | Documented in AGENTS.md §5.2 |
 | 7 | Frontend visual identity / design system | Decided | Tailwind CSS v4.3 + modern glassmorphism |
+| 8 | Simplified bearer-only auth (access in memory, refresh in localStorage) | Decided | `specs/decisions/006-simplified-bearer-auth.md` |

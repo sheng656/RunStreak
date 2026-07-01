@@ -34,10 +34,15 @@ public class AuthController : ControllerBase
                 return BadRequest(new { message = "Registration failed." });
             }
 
-            SetRefreshTokenCookie(result.RefreshToken);
-            SetCsrfTokenCookie();
-
-            return Ok(result.Response);
+            // Return both tokens in the response body.
+            // The client stores the access token in memory (Zustand) and the
+            // refresh token in localStorage for session persistence across reloads.
+            return Ok(new AuthResponse
+            {
+                AccessToken = result.Response.AccessToken,
+                RefreshToken = result.RefreshToken,
+                User = result.Response.User
+            });
         }
         catch (InvalidOperationException ex)
         {
@@ -60,106 +65,45 @@ public class AuthController : ControllerBase
             return Unauthorized(new { message = "Invalid email or password." });
         }
 
-        SetRefreshTokenCookie(result.RefreshToken);
-        SetCsrfTokenCookie();
-
-        return Ok(result.Response);
+        return Ok(new AuthResponse
+        {
+            AccessToken = result.Response.AccessToken,
+            RefreshToken = result.RefreshToken,
+            User = result.Response.User
+        });
     }
 
     [HttpPost("refresh")]
-    public async Task<IActionResult> Refresh()
+    public async Task<IActionResult> Refresh([FromBody] RefreshRequest request)
     {
-        // 1. Double submit CSRF verification
-        if (!Request.Cookies.TryGetValue("csrf_token", out var csrfCookie))
+        if (!ModelState.IsValid)
         {
-            return BadRequest(new { message = "CSRF token missing in request cookies." });
+            return BadRequest(ModelState);
         }
 
-        if (!Request.Headers.TryGetValue("X-CSRF-Token", out var csrfHeader) || string.IsNullOrEmpty(csrfHeader))
-        {
-            return BadRequest(new { message = "CSRF token missing in request headers." });
-        }
-
-        if (csrfCookie != csrfHeader)
-        {
-            return BadRequest(new { message = "CSRF validation failed: Token mismatch." });
-        }
-
-        // 2. Extract refresh token cookie
-        if (!Request.Cookies.TryGetValue("refresh_token", out var rawRefreshToken))
-        {
-            return Unauthorized(new { message = "Refresh token missing." });
-        }
-
-        // 3. Process refresh rotation
-        var result = await _authService.RefreshAsync(rawRefreshToken);
+        var result = await _authService.RefreshAsync(request.RefreshToken);
         if (result == null)
         {
-            ClearCookies();
             return Unauthorized(new { message = "Session expired or invalid refresh token." });
         }
 
-        // 4. Update cookies and return new access token
-        SetRefreshTokenCookie(result.RefreshToken);
-        SetCsrfTokenCookie();
-
-        return Ok(new { accessToken = result.Response.AccessToken });
+        // Rotate: return the new refresh token alongside the new access token.
+        // Client must save the new refresh token to localStorage (old one is revoked server-side).
+        return Ok(new
+        {
+            accessToken = result.Response.AccessToken,
+            refreshToken = result.RefreshToken
+        });
     }
 
     [HttpPost("logout")]
-    public async Task<IActionResult> Logout()
+    public async Task<IActionResult> Logout([FromBody] RefreshRequest request)
     {
-        if (Request.Cookies.TryGetValue("refresh_token", out var rawRefreshToken))
+        if (!string.IsNullOrEmpty(request.RefreshToken))
         {
-            await _authService.LogoutAsync(rawRefreshToken);
+            await _authService.LogoutAsync(request.RefreshToken);
         }
 
-        ClearCookies();
         return NoContent();
-    }
-
-    private void SetRefreshTokenCookie(string token)
-    {
-        var cookieOptions = new CookieOptions
-        {
-            HttpOnly = true,
-            Secure = true, // requires HTTPS
-            SameSite = SameSiteMode.Strict,
-            Path = "/api/auth/refresh", // Scoped specifically to token refresh path
-            Expires = DateTimeOffset.UtcNow.AddDays(7)
-        };
-        Response.Cookies.Append("refresh_token", token, cookieOptions);
-    }
-
-    private void SetCsrfTokenCookie()
-    {
-        var csrfToken = Guid.NewGuid().ToString("N");
-        var cookieOptions = new CookieOptions
-        {
-            HttpOnly = false, // Readable by JavaScript for header inclusion
-            Secure = true,
-            SameSite = SameSiteMode.Strict,
-            Path = "/",
-            Expires = DateTimeOffset.UtcNow.AddDays(7)
-        };
-        Response.Cookies.Append("csrf_token", csrfToken, cookieOptions);
-    }
-
-    private void ClearCookies()
-    {
-        Response.Cookies.Delete("refresh_token", new CookieOptions
-        {
-            Path = "/api/auth/refresh",
-            HttpOnly = true,
-            Secure = true,
-            SameSite = SameSiteMode.Strict
-        });
-        Response.Cookies.Delete("csrf_token", new CookieOptions
-        {
-            Path = "/",
-            HttpOnly = false,
-            Secure = true,
-            SameSite = SameSiteMode.Strict
-        });
     }
 }

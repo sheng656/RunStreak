@@ -1,6 +1,6 @@
 # 001 — Split-Storage JWT Authentication
 
-**Status:** decided
+**Status:** superseded (by ADR 006 — 2026-07-01)
 **Date:** 2026-06-22
 
 ## Context

@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { useAuthStore, type UserProfile } from './authStore'
+import { setStoredRefreshToken, getStoredRefreshToken } from '../api/client'
 
 const mockUser: UserProfile = {
   id: 'user-123',
@@ -17,7 +18,7 @@ const mockUser: UserProfile = {
 
 describe('authStore', () => {
   beforeEach(() => {
-    // Reset Zustand store state before each test
+    // Reset Zustand store state and localStorage before each test
     const { clearAuth, setLoading } = useAuthStore.getState()
     clearAuth()
     setLoading(true)
@@ -61,6 +62,18 @@ describe('authStore', () => {
     expect(state.isAuthenticated).toBe(false)
   })
 
+  it('should clear localStorage refresh token on clearAuth', () => {
+    // Simulate a stored refresh token in localStorage
+    setStoredRefreshToken('some-refresh-token')
+    expect(getStoredRefreshToken()).toBe('some-refresh-token')
+
+    const { clearAuth } = useAuthStore.getState()
+    clearAuth()
+
+    // localStorage refresh token must be gone after logout
+    expect(getStoredRefreshToken()).toBeNull()
+  })
+
   it('should set loading state', () => {
     const { setLoading } = useAuthStore.getState()
     setLoading(false)
@@ -69,3 +82,4 @@ describe('authStore', () => {
     expect(state.isLoading).toBe(false)
   })
 })
+

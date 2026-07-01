@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom'
 import { Menu, X, Flame } from 'lucide-react'
 import { useAuthStore } from '../../stores/authStore'
 import authApi from '../../api/auth'
+import { getStoredRefreshToken } from '../../api/client'
 import ThemeToggle from '../ui/ThemeToggle'
 
 export default function Navbar() {
@@ -12,10 +13,14 @@ export default function Navbar() {
 
   async function handleLogout() {
     try {
-      await authApi.logout()
+      const refreshToken = getStoredRefreshToken()
+      if (refreshToken) {
+        await authApi.logout(refreshToken)
+      }
     } catch {
       // Best-effort — clear local state regardless
     }
+    // clearAuth() also wipes the refresh token from localStorage
     clearAuth()
   }
 

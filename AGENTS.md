@@ -108,49 +108,46 @@ Agents should proactively create/update these files as part of completing a task
 
 ## 5. Security requirements (scored advanced requirement #3)
 
-Two measures minimum, both with a written justification in `README.md`. The two below are mandatory; do not silently drop either.
+Three measures are implemented, all with written justification in `README.md`. These are the measures counted for scoring:
 
-### 5.1 Authentication & CSRF posture — split-storage JWT (access in memory, refresh in HttpOnly cookie)
+### 5.1 Authentication — bearer-only JWT with localStorage refresh token
 
-This is the architecture to implement — not the pure-bearer-everywhere variant. It gives a real, defensible CSRF story instead of a "we just didn't use cookies" non-answer.
+Simplified from the original split-storage/CSRF design (see superseded ADR 001; new ADR 006 explains the decision):
 
-- **Access token:** short-lived (e.g. 15 min), kept **in memory only** (e.g. a Zustand store, never `localStorage`/`sessionStorage`). Sent via `Authorization: Bearer <token>` header on API calls. Lost on full page reload by design — that's the tradeoff for not being readable by an XSS payload that scrapes storage.
-- **Refresh token:** longer-lived, stored in an **`HttpOnly`, `Secure`, `SameSite=Strict`** cookie, scoped to the refresh endpoint path only (e.g. `Path=/auth/refresh`) so it isn't sent on unrelated requests. JavaScript can never read it — that's what makes the access token's in-memory storage safe to pair with it (if the access token alone leaked via XSS, blast radius is one short-lived token, not persistent account takeover).
-- **Why this re-introduces CSRF — and why that's the point:** because the refresh token lives in a cookie, the browser *will* auto-attach it to a cross-site request to `/auth/refresh`. That's a genuine CSRF surface, not a hypothetical one. Mitigate it with **both**:
-  1. `SameSite=Strict` on the refresh cookie (blocks the cookie being sent on cross-site navigations/requests in the first place, in all modern browsers), **and**
-  2. a double-submit CSRF token as defense-in-depth: server sets a separate, non-HttpOnly `csrf_token` cookie; frontend reads it and echoes it back as a custom header (e.g. `X-CSRF-Token`) on the refresh call; server verifies the header matches the cookie value. A forged cross-site request can't read the cookie to populate the header, so it fails even if `SameSite` were ever misconfigured or a browser edge case allowed the cookie through.
-  - Document both in the README as the "Anti-CSRF measures" justification — this is what makes it a real implementation rather than "N/A because no cookies."
-- **Refresh token rotation:** every refresh issues a brand-new refresh token and invalidates the old one (rotate-on-use). Store refresh tokens **hashed**, not raw, server-side (see data model below) so a DB leak doesn't hand out usable tokens directly.
-- Configure CORS with an explicit allow-list (the Vercel origin only), `AllowCredentials()` enabled (required for the cookie to be sent cross-origin to the deployed API), and never combine a wildcard origin with credentials.
-- Sign access tokens with a strong key from configuration/Key Vault — never hardcode a signing secret in source. Validate `iss`, `aud`, `exp` on every request (default ASP.NET Core JWT middleware behavior — don't disable validation parameters).
+- **Access token:** short-lived (15 min), kept **in memory only** (Zustand `authStore`, never `localStorage`/`sessionStorage`). Sent via `Authorization: Bearer <token>` header. Lost on page reload by design — the silent refresh flow restores it. This limits XSS blast radius to one 15-minute window.
+- **Refresh token:** longer-lived (7 days), stored in **`localStorage`** so sessions survive page reloads. Passed in the request body (not a cookie) to `/api/auth/refresh`. Server stores only a SHA-256 hash; rotated on every use (old token revoked); reuse of a revoked token triggers revocation of all the user's tokens.
+- **No cookies** → **no CSRF surface.** CORS is configured with an explicit origin allow-list (no wildcard). `AllowCredentials()` is not needed.
+- Sign access tokens from configuration — never hardcode a signing key. Validate `iss`, `aud`, `exp` on every request.
 
-**Data model addition — `refresh_tokens` table:**
+**`refresh_tokens` table (unchanged):**
 
 | Column | Type | Notes |
 |---|---|---|
 | `Id` | Guid (PK) | |
 | `UserId` | Guid (FK → Users) | |
-| `TokenHash` | string | SHA-256 (or similar) hash of the token — never store the raw token |
+| `TokenHash` | string | SHA-256 hash — never store the raw token |
 | `ExpiresAt` | datetime | |
 | `CreatedAt` | datetime | |
-| `RevokedAt` | datetime? | null = still valid; set on rotation or explicit logout |
-| `ReplacedByTokenHash` | string? | optional, useful for detecting token reuse/replay attacks |
-
-Add this to `specs/01-data-model.md` (or create it if it doesn't exist yet) when this is implemented, with an ADR explaining the rotate-on-use decision.
-
-**Natural pairing if time permits:** this architecture combines well with the optional WebSockets stretch goal (real-time leaderboard updates) — the in-memory access token is exactly what you'd attach when establishing the WebSocket/SignalR connection (e.g. as a query-string or header value during the handshake), so building both together avoids a second, separate auth path for sockets.
+| `RevokedAt` | datetime? | null = still valid |
+| `ReplacedByTokenHash` | string? | token reuse/replay detection |
 
 ### 5.2 Password hashing
 
-- Use ASP.NET Core Identity's `PasswordHasher<TUser>` (PBKDF2-based) or BCrypt.Net — pick one, document which, and don't roll a custom hash.
-- Never log raw passwords, even in debug builds. Never include them in `/specs` prompt logs either — if a prompt log would contain a real password/secret, redact it before committing.
+- Use ASP.NET Core Identity's `PasswordHasher<TUser>` (PBKDF2-based) — already implemented. Don't swap without asking.
+- Never log raw passwords, even in debug builds. Never include them in `/specs` prompt logs.
 
-### 5.3 Other measures to implement (data validation + rate limiting are the natural complements)
+### 5.3 Data validation / sanitisation (Game Integrity Protection)
 
-- **Data validation/sanitisation:** model validation via data annotations or FluentValidation on every write endpoint (e.g. reject negative distances, oversized payloads, malformed dates) before EF Core touches the DB.
-- **Rate limiting:** ASP.NET Core's built-in rate-limiting middleware on `/auth/login` and run-submission endpoints, specifically to prevent (a) credential brute-forcing and (b) leaderboard-inflation spam (fake run submissions).
+- Model validation via Data Annotations on every write endpoint: reject negative distances, future run dates, oversized payloads.
+- Justification: in a gamified system with public leaderboards, missing validation lets malicious users inflate scores via raw API calls.
 
-Each implemented measure needs a short README paragraph: what it protects against, and why that threat matters *for this app specifically* (e.g. "a public leaderboard is a direct incentive to submit fake runs, hence rate limiting on submission").
+### 5.4 Rate limiting (Anti-Spam & Anti-Brute-Force)
+
+- `/api/auth/login`: fixed window — 5 attempts / 15 min per IP.
+- `/api/runs` POST: sliding window — 10 submissions / hour per user.
+- Justification: public leaderboard incentivises automated fake-run spam; rate limiting closes that abuse vector.
+
+Each measure needs a README paragraph: what it protects against, and why that threat matters for this app specifically.
 
 ## 6. Cost constraints — stay inside Azure free tiers
 
@@ -207,6 +204,5 @@ If time pressure means one of these has to be skipped, skip last-mile polish (e.
 - Don't provision paid-tier Azure resources without flagging it first.
 - Don't commit secrets, connection strings, or signing keys.
 - Don't skip the `/specs` prompt log "to move faster" — it's graded.
-- Don't store the access token in `localStorage` or `sessionStorage` — it must stay in memory only, per §5.1. Don't store the refresh token anywhere readable by JavaScript — it must be `HttpOnly`.
-- Don't implement the refresh-cookie flow without the double-submit CSRF token — `SameSite=Strict` alone is the fallback, not the full implementation; both together are what's documented as the CSRF mitigation.
-- **All documentation in this repository — README, `/specs` files, ADRs, prompt logs, code comments — must be written in English.** This applies even if a prompt given to an agent was in another language; the agent's written output to any file in this repo must still be English.
+- Don't store the access token in `localStorage` or `sessionStorage` — it must stay in memory only (Zustand). The refresh token is in `localStorage`; the access token is not.
+- **All documentation in this repository — README, `/specs` files, ADRs, prompt logs, code comments — must be written in English.** This applies even if a prompt given to an agent was in another language; the agent's written output to any file in this repo must still be English.

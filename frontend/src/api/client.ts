@@ -1,13 +1,31 @@
 import axios, { type AxiosInstance, type AxiosRequestConfig } from 'axios'
 import { useAuthStore } from '../stores/authStore'
 
+// ── Constants ─────────────────────────────────────────────────────────────────
+const REFRESH_TOKEN_KEY = 'runstreak_refresh_token'
+
+// ── localStorage helpers ──────────────────────────────────────────────────────
+// The refresh token is persisted in localStorage so sessions survive page
+// reloads. The access token lives in memory only (Zustand authStore), so a
+// full page reload requires one round-trip to /auth/refresh to restore it.
+export function getStoredRefreshToken(): string | null {
+  return localStorage.getItem(REFRESH_TOKEN_KEY)
+}
+
+export function setStoredRefreshToken(token: string): void {
+  localStorage.setItem(REFRESH_TOKEN_KEY, token)
+}
+
+export function clearStoredRefreshToken(): void {
+  localStorage.removeItem(REFRESH_TOKEN_KEY)
+}
+
 // ── Axios instance ───────────────────────────────────────────────────────────
 // All API calls go through this single client — never scattered fetch() calls
-// in components. Centralised here so auth, CSRF, and error handling are
-// applied consistently.
+// in components. Centralised here so auth and error handling are applied
+// consistently.
 const apiClient: AxiosInstance = axios.create({
   baseURL: import.meta.env.VITE_API_URL ?? '/api',
-  withCredentials: true, // required for the HttpOnly refresh cookie
   headers: {
     'Content-Type': 'application/json',
   },
@@ -82,31 +100,23 @@ apiClient.interceptors.response.use(
 )
 
 // ── Token refresh ─────────────────────────────────────────────────────────────
-// Reads the csrf_token cookie (non-HttpOnly, set by the server) and echoes it
-// as X-CSRF-Token header. The refresh cookie is HttpOnly and auto-attached.
-// Together, this implements the double-submit CSRF pattern — see ADR 001.
+// Reads the refresh token from localStorage, sends it in the request body.
+// The server rotates the token on use — we must save the new one.
 async function refreshAccessToken(): Promise<string> {
-  const csrfToken = getCsrfCookie()
+  const refreshToken = getStoredRefreshToken()
+  if (!refreshToken) {
+    throw new Error('No refresh token available')
+  }
 
-  const response = await axios.post<{ accessToken: string }>(
+  const response = await axios.post<{ accessToken: string; refreshToken: string }>(
     `${import.meta.env.VITE_API_URL ?? '/api'}/auth/refresh`,
-    {},
-    {
-      withCredentials: true,
-      headers: {
-        'X-CSRF-Token': csrfToken ?? '',
-      },
-    },
+    { refreshToken },
   )
 
-  return response.data.accessToken
-}
+  // Persist the rotated refresh token
+  setStoredRefreshToken(response.data.refreshToken)
 
-function getCsrfCookie(): string | null {
-  const match = document.cookie
-    .split('; ')
-    .find((row) => row.startsWith('csrf_token='))
-  return match ? decodeURIComponent(match.split('=')[1]) : null
+  return response.data.accessToken
 }
 
 // ── Typed API modules ─────────────────────────────────────────────────────────

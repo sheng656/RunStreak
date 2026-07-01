@@ -8,14 +8,13 @@ const authApi = {
   register: (data: RegisterRequest) =>
     apiClient.post<AuthResponse>('/auth/register', data),
 
-  logout: () =>
-    apiClient.post('/auth/logout'),
+  logout: (refreshToken: string) =>
+    apiClient.post('/auth/logout', { refreshToken }),
 
-  // Called on app mount to silently restore the session.
-  // The refresh cookie is HttpOnly and auto-attached by the browser.
-  // The X-CSRF-Token header is handled by the response interceptor in client.ts.
-  refresh: () =>
-    apiClient.post<{ accessToken: string }>('/auth/refresh'),
+  // Called on app mount to silently restore the session from the stored refresh token.
+  // The refresh token is read from localStorage by the caller and passed here.
+  refresh: (refreshToken: string) =>
+    apiClient.post<{ accessToken: string; refreshToken: string }>('/auth/refresh', { refreshToken }),
 }
 
 export default authApi

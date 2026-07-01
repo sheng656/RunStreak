@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { Flame, User, Mail, Lock, Eye, EyeOff } from 'lucide-react'
 import { useAuthStore } from '../stores/authStore'
 import authApi from '../api/auth'
+import { setStoredRefreshToken } from '../api/client'
 import toast from 'react-hot-toast'
 
 export default function RegisterPage() {
@@ -65,6 +66,7 @@ export default function RegisterPage() {
         password: form.password,
         displayName: form.displayName,
       })
+      setStoredRefreshToken(res.data.refreshToken)
       setAccessToken(res.data.accessToken)
       setUser(res.data.user)
       setLoading(false)

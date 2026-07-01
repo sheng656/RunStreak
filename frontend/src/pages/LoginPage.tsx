@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { Flame, Mail, Lock, Eye, EyeOff } from 'lucide-react'
 import { useAuthStore } from '../stores/authStore'
 import authApi from '../api/auth'
+import { setStoredRefreshToken } from '../api/client'
 import toast from 'react-hot-toast'
 
 export default function LoginPage() {
@@ -31,6 +32,7 @@ export default function LoginPage() {
     setSubmitting(true)
     try {
       const res = await authApi.login({ email, password })
+      setStoredRefreshToken(res.data.refreshToken)
       setAccessToken(res.data.accessToken)
       setUser(res.data.user)
       setLoading(false)
