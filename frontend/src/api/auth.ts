@@ -14,7 +14,15 @@ const authApi = {
   // Called on app mount to silently restore the session from the stored refresh token.
   // The refresh token is read from localStorage by the caller and passed here.
   refresh: (refreshToken: string) =>
-    apiClient.post<{ accessToken: string; refreshToken: string }>('/auth/refresh', { refreshToken }),
+    apiClient.post<{ accessToken: string; refreshToken: string }>(
+      '/auth/refresh',
+      { refreshToken },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      },
+    ),
 }
 
 export default authApi

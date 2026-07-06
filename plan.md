@@ -1,7 +1,7 @@
 # RunStreak — Project Plan (LIVE)
 
-> **Last updated:** 2026-07-01
-> **Current focus:** Phase 10 — Submission Preparation (All core features and advanced requirements complete)
+> **Last updated:** 2026-07-07
+> **Current focus:** Phase 10 — Submission Preparation + production auth stability hotfixes
 > **Overall status:** ✅ Phase 0-8 complete, Phase 10 in progress
 
 This file is the single source of truth for what's done, what's in progress, and what's next. Agents must read it at the start of every session and update it at the end.
@@ -339,6 +339,7 @@ This file is the single source of truth for what's done, what's in progress, and
   - Part 1: How AI was used during development (reference `/specs`)
   - Part 2: Design decisions made during the project
 - [ ] Final deployment verification: both URLs live and working
+  - [x] Hotfix: make `/api/auth/refresh` compatible with JSON and form-urlencoded payloads to prevent production `415 Unsupported Media Type` on login-page silent refresh
 
 ---
 

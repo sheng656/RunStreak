@@ -9,6 +9,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using RunStreak.Api.Data;
+using RunStreak.Api.DTOs.Auth;
 using RunStreak.Api.DTOs.Runs;
 using RunStreak.Api.Models;
 using Xunit;
@@ -166,5 +167,39 @@ public class ControllerTests : IClassFixture<WebApplicationFactory<Program>>
         var entries = await response.Content.ReadFromJsonAsync<List<dynamic>>();
         Assert.NotNull(entries);
         Assert.Equal(2, entries.Count);
+    }
+
+    [Fact]
+    public async Task Refresh_ShouldAcceptFormUrlEncodedPayload()
+    {
+        // Arrange
+        var client = _factory.CreateClient();
+        var unique = Guid.NewGuid().ToString("N")[..8];
+
+        var registerRequest = new RegisterRequest
+        {
+            Username = $"runner_{unique}",
+            Email = $"{unique}@example.com",
+            Password = "Password123!",
+            DisplayName = $"Runner {unique}"
+        };
+
+        var registerResponse = await client.PostAsJsonAsync("/api/auth/register", registerRequest);
+        Assert.Equal(HttpStatusCode.OK, registerResponse.StatusCode);
+
+        var authResponse = await registerResponse.Content.ReadFromJsonAsync<AuthResponse>();
+        Assert.NotNull(authResponse);
+        Assert.False(string.IsNullOrWhiteSpace(authResponse.RefreshToken));
+
+        var formPayload = new FormUrlEncodedContent(new[]
+        {
+            new KeyValuePair<string, string>("refreshToken", authResponse.RefreshToken)
+        });
+
+        // Act
+        var refreshResponse = await client.PostAsync("/api/auth/refresh", formPayload);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.OK, refreshResponse.StatusCode);
     }
 }

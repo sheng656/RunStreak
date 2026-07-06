@@ -1,8 +1,11 @@
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.AspNetCore.WebUtilities;
 using RunStreak.Api.DTOs.Auth;
 using RunStreak.Api.Services;
+using System.Text;
+using System.Text.Json;
 
 namespace RunStreak.Api.Controllers;
 
@@ -74,14 +77,15 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("refresh")]
-    public async Task<IActionResult> Refresh([FromBody] RefreshRequest request)
+    public async Task<IActionResult> Refresh()
     {
-        if (!ModelState.IsValid)
+        var refreshToken = await ReadRefreshTokenFromRequestAsync();
+        if (string.IsNullOrWhiteSpace(refreshToken))
         {
-            return BadRequest(ModelState);
+            return BadRequest(new { message = "Refresh token is required." });
         }
 
-        var result = await _authService.RefreshAsync(request.RefreshToken);
+        var result = await _authService.RefreshAsync(refreshToken);
         if (result == null)
         {
             return Unauthorized(new { message = "Session expired or invalid refresh token." });
@@ -97,13 +101,73 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("logout")]
-    public async Task<IActionResult> Logout([FromBody] RefreshRequest request)
+    public async Task<IActionResult> Logout()
     {
-        if (!string.IsNullOrEmpty(request.RefreshToken))
+        var refreshToken = await ReadRefreshTokenFromRequestAsync();
+        if (!string.IsNullOrWhiteSpace(refreshToken))
         {
-            await _authService.LogoutAsync(request.RefreshToken);
+            await _authService.LogoutAsync(refreshToken);
         }
 
         return NoContent();
+    }
+
+    private async Task<string?> ReadRefreshTokenFromRequestAsync()
+    {
+        // 1) Native form posts: refreshToken=...
+        if (Request.HasFormContentType)
+        {
+            var form = await Request.ReadFormAsync();
+            var tokenFromForm = form["refreshToken"].FirstOrDefault();
+            if (!string.IsNullOrWhiteSpace(tokenFromForm))
+            {
+                return tokenFromForm;
+            }
+        }
+
+        // 2) Raw body (JSON or urlencoded body sent with a non-JSON content type)
+        Request.EnableBuffering();
+        Request.Body.Position = 0;
+
+        using (var reader = new StreamReader(Request.Body, Encoding.UTF8, leaveOpen: true))
+        {
+            var rawBody = await reader.ReadToEndAsync();
+            Request.Body.Position = 0;
+
+            if (!string.IsNullOrWhiteSpace(rawBody))
+            {
+                try
+                {
+                    var jsonPayload = JsonSerializer.Deserialize<RefreshRequest>(
+                        rawBody,
+                        new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+                    if (!string.IsNullOrWhiteSpace(jsonPayload?.RefreshToken))
+                    {
+                        return jsonPayload.RefreshToken;
+                    }
+                }
+                catch (JsonException)
+                {
+                    // Non-JSON body, continue to query-string style parsing.
+                }
+
+                var parsedQuery = QueryHelpers.ParseQuery(rawBody.StartsWith('?') ? rawBody : $"?{rawBody}");
+                var tokenFromRawBody = parsedQuery["refreshToken"].FirstOrDefault();
+                if (!string.IsNullOrWhiteSpace(tokenFromRawBody))
+                {
+                    return tokenFromRawBody;
+                }
+            }
+        }
+
+        // 3) Last-resort compatibility for clients passing token via query string.
+        var tokenFromQuery = Request.Query["refreshToken"].FirstOrDefault();
+        if (!string.IsNullOrWhiteSpace(tokenFromQuery))
+        {
+            return tokenFromQuery;
+        }
+
+        return null;
     }
 }

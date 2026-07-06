@@ -111,6 +111,11 @@ async function refreshAccessToken(): Promise<string> {
   const response = await axios.post<{ accessToken: string; refreshToken: string }>(
     `${import.meta.env.VITE_API_URL ?? '/api'}/auth/refresh`,
     { refreshToken },
+    {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    },
   )
 
   // Persist the rotated refresh token
