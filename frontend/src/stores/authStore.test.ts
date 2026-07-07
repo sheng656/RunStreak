@@ -13,6 +13,7 @@ const mockUser: UserProfile = {
   longestStreak: 10,
   totalDistanceKm: 25.5,
   totalRuns: 6,
+  streakFreezeCount: 0,
   createdAt: new Date().toISOString(),
 }
 

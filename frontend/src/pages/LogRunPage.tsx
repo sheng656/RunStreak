@@ -350,7 +350,7 @@ export default function LogRunPage() {
       </div>
 
       {/* Pace preview */}
-      {distance > 0 && duration > 0 && (
+      {distance > 0 && totalDurationMinutes > 0 && (
         <div className="card p-4 mb-4 flex items-center justify-between animate-fade-in">
           <div className="flex items-center gap-2 text-sm text-[hsl(var(--color-text-muted))]">
             <Timer size={16} />

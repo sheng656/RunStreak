@@ -13,6 +13,7 @@ export interface UserProfile {
   longestStreak: number
   totalDistanceKm: number
   totalRuns: number
+  streakFreezeCount: number
   createdAt: string
 }
 
