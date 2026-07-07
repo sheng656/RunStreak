@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using RunStreak.Api.Data;
+using RunStreak.Api.Models;
 
 namespace RunStreak.Api.Services;
 
@@ -16,28 +17,110 @@ public class StreakService(AppDbContext context) : IStreakService
             query = query.Where(r => r.Id != excludeRunId.Value);
         }
 
-        // Project only the Date component to reduce data transfer and simplify date-only operations
         var runDates = await query
             .Select(r => r.RunDate)
             .ToListAsync();
 
-        if (runDates.Count == 0)
+        var usedFreezes = await _context.StreakFreezes
+            .Where(sf => sf.UserId == userId && sf.Type == "used")
+            .ToListAsync();
+
+        var usedFreezeDates = usedFreezes.Select(sf => sf.Date.Date).ToList();
+
+        // 2. Merge distinct sorted active dates
+        var activeDates = runDates
+            .Select(d => d.Date)
+            .Concat(usedFreezeDates)
+            .Distinct()
+            .OrderBy(d => d)
+            .ToList();
+
+        if (activeDates.Count == 0)
         {
             return new StreakResult { CurrentStreak = 0, LongestStreak = 0 };
         }
 
-        // 2. Convert to Date only (UTC date) and get distinct sorted dates
-        var distinctSortedDates = runDates
-            .Select(d => d.Date)
-            .Distinct()
-            .OrderBy(d => d)
-            .ToList();
+        // 3. Scan for gaps of exactly 1 day and auto-apply freezes if available
+        var user = await _context.Users.FindAsync(userId);
+        if (user != null && user.StreakFreezeCount > 0)
+        {
+            var todayLocal = DateTime.UtcNow.AddHours(14).Date; // max timezone NZ/Kiribati
+            bool changesMade = false;
+
+            var updatedActiveDates = new List<DateTime>(activeDates);
+
+            for (int i = 1; i < updatedActiveDates.Count; i++)
+            {
+                var prev = updatedActiveDates[i - 1];
+                var curr = updatedActiveDates[i];
+                var gapDays = (curr - prev).Days - 1;
+
+                if (gapDays > 0 && user.StreakFreezeCount >= gapDays)
+                {
+                    for (int g = 1; g <= gapDays; g++)
+                    {
+                        var freezeDate = prev.AddDays(g);
+                        var newFreeze = new StreakFreeze
+                        {
+                            UserId = userId,
+                            Type = "used",
+                            Source = "auto_applied",
+                            Date = freezeDate
+                        };
+                        _context.StreakFreezes.Add(newFreeze);
+                        user.StreakFreezeCount--;
+                        changesMade = true;
+                    }
+                }
+            }
+
+            var lastActiveDate = updatedActiveDates[^1];
+            if (lastActiveDate < todayLocal.AddDays(-1))
+            {
+                var gapDays = (todayLocal.AddDays(-1) - lastActiveDate).Days;
+                if (gapDays > 0 && user.StreakFreezeCount >= gapDays)
+                {
+                    for (int g = 1; g <= gapDays; g++)
+                    {
+                        var freezeDate = lastActiveDate.AddDays(g);
+                        var newFreeze = new StreakFreeze
+                        {
+                            UserId = userId,
+                            Type = "used",
+                            Source = "auto_applied",
+                            Date = freezeDate
+                        };
+                        _context.StreakFreezes.Add(newFreeze);
+                        user.StreakFreezeCount--;
+                        changesMade = true;
+                    }
+                }
+            }
+
+            if (changesMade)
+            {
+                await _context.SaveChangesAsync();
+
+                // Re-fetch used freezes and merge again
+                var reFetchedUsedFreezes = await _context.StreakFreezes
+                    .Where(sf => sf.UserId == userId && sf.Type == "used")
+                    .Select(sf => sf.Date.Date)
+                    .ToListAsync();
+
+                activeDates = runDates
+                    .Select(d => d.Date)
+                    .Concat(reFetchedUsedFreezes)
+                    .Distinct()
+                    .OrderBy(d => d)
+                    .ToList();
+            }
+        }
 
         int longestStreak = 0;
         int currentStreakSequence = 0;
         DateTime? previousDate = null;
 
-        foreach (var date in distinctSortedDates)
+        foreach (var date in activeDates)
         {
             if (previousDate == null)
             {
@@ -63,12 +146,13 @@ public class StreakService(AppDbContext context) : IStreakService
             }
         }
 
-        // 3. Determine if the current streak is active today or yesterday (server UTC date)
-        var today = DateTime.UtcNow.Date;
-        var lastRunDate = distinctSortedDates[^1];
+        // 4. Determine if the current streak is active today or yesterday (server UTC date)
+        var todayUtc = DateTime.UtcNow.Date;
+        var tomorrowUtc = todayUtc.AddDays(1);
+        var lastActiveDateFinal = activeDates[^1];
         
         int currentStreak = 0;
-        if (lastRunDate == today || lastRunDate == today.AddDays(-1))
+        if (lastActiveDateFinal >= todayUtc.AddDays(-1) && lastActiveDateFinal <= tomorrowUtc)
         {
             currentStreak = currentStreakSequence;
         }

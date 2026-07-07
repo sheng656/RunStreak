@@ -21,6 +21,7 @@ builder.Services.AddScoped<IBadgeService, BadgeService>();
 builder.Services.AddScoped<ILeaderboardService, LeaderboardService>();
 builder.Services.AddScoped<IRunService, RunService>();
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IStreakFreezeService, StreakFreezeService>();
 // AI screenshot import via Google Gemini (Google.GenAI + Microsoft.Extensions.AI)
 builder.Services.AddScoped<IScreenshotImportService, ScreenshotImportService>();
 

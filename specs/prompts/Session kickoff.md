@@ -8,7 +8,7 @@ verify you actually read them and didn't skim:
 
 1. Tech stack: state management lib, styling lib, auth approach (in one sentence — be specific about
    where the access token lives vs where the refresh token lives, not just "JWT").
-2. The exact CSRF mitigation strategy for the refresh endpoint (name both mechanisms, not just one).
+2. The exact rate limiting strategy for the login and run submission endpoints (name the windows and limits for both).
 3. Which 3 advanced requirements are the ones being scored, per the README checklist.
 4. What you need to create/update in /specs before you consider this session's work "done."
 5. The Azure tier constraints you must not exceed.

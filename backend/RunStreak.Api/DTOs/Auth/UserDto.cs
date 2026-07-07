@@ -12,5 +12,6 @@ public class UserDto
     public int LongestStreak { get; set; }
     public decimal TotalDistanceKm { get; set; }
     public int TotalRuns { get; set; }
+    public int StreakFreezeCount { get; set; }
     public DateTime CreatedAt { get; set; }
 }

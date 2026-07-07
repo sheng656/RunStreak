@@ -67,7 +67,9 @@ const getTodayLocal = () => new Date(Date.now() - new Date().getTimezoneOffset()
 
 const initialForm = {
   distanceKm: '',
+  durationHours: '',
   durationMinutes: '',
+  durationSeconds: '',
   runDate: getTodayLocal(),
   notes: '',
   perceivedEffort: null as number | null,
@@ -90,16 +92,20 @@ export default function LogRunPage() {
 
   // Live pace preview — formatted as M:SS/km
   const distance = parseFloat(form.distanceKm) || 0
-  const duration = parseFloat(form.durationMinutes) || 0
-  const rawPace = distance > 0 && duration > 0 ? duration / distance : 0
+  const durationHours = parseInt(form.durationHours) || 0
+  const durationMinutes = parseInt(form.durationMinutes) || 0
+  const durationSeconds = parseInt(form.durationSeconds) || 0
+  const totalDurationMinutes = durationHours * 60 + durationMinutes + durationSeconds / 60
+  const rawPace = distance > 0 && totalDurationMinutes > 0 ? totalDurationMinutes / distance : 0
   const paceDisplay = formatPace(rawPace)
 
   function updateField(field: string, value: string | number | null) {
     setForm((prev) => ({ ...prev, [field]: value }))
-    if (errors[field]) {
+    const errorKeyToClear = field.startsWith('duration') ? 'duration' : field
+    if (errors[errorKeyToClear]) {
       setErrors((prev) => {
         const next = { ...prev }
-        delete next[field]
+        delete next[errorKeyToClear]
         return next
       })
     }
@@ -108,15 +114,23 @@ export default function LogRunPage() {
   function validate(): boolean {
     const errs: Record<string, string> = {}
     const dist = parseFloat(form.distanceKm)
-    const dur = parseFloat(form.durationMinutes)
+
+    const h = parseInt(form.durationHours) || 0
+    const m = parseInt(form.durationMinutes) || 0
+    const s = parseInt(form.durationSeconds) || 0
+    const totalMinutes = h * 60 + m + s / 60
 
     if (!form.distanceKm) errs.distanceKm = 'Distance is required'
     else if (isNaN(dist) || dist < 0.01) errs.distanceKm = 'Minimum distance is 0.01 km'
     else if (dist > 1000) errs.distanceKm = 'Maximum distance is 1000 km'
 
-    if (!form.durationMinutes) errs.durationMinutes = 'Duration is required'
-    else if (isNaN(dur) || dur < 0.1) errs.durationMinutes = 'Minimum duration is 0.1 minutes'
-    else if (dur > 1440) errs.durationMinutes = 'Maximum duration is 1440 minutes (24h)'
+    if (form.durationHours === '' && form.durationMinutes === '' && form.durationSeconds === '') {
+      errs.duration = 'Duration is required'
+    } else if (isNaN(totalMinutes) || totalMinutes < 0.1) {
+      errs.duration = 'Minimum duration is 0.1 minutes (6 seconds)'
+    } else if (totalMinutes > 1440) {
+      errs.duration = 'Maximum duration is 1440 minutes (24h)'
+    }
 
     if (!form.runDate) errs.runDate = 'Date is required'
     else if (form.runDate > getTodayLocal()) errs.runDate = 'Date cannot be in the future'
@@ -133,9 +147,14 @@ export default function LogRunPage() {
 
     setSubmitting(true)
     try {
+      const h = parseInt(form.durationHours) || 0
+      const m = parseInt(form.durationMinutes) || 0
+      const s = parseInt(form.durationSeconds) || 0
+      const totalMinutes = h * 60 + m + s / 60
+
       const res = await runsApi.create({
         distanceKm: parseFloat(form.distanceKm),
-        durationMinutes: parseFloat(form.durationMinutes),
+        durationMinutes: totalMinutes,
         runDate: form.runDate,
         notes: form.notes || undefined,
         perceivedEffort: form.perceivedEffort ?? undefined,
@@ -158,10 +177,12 @@ export default function LogRunPage() {
         navigate('/runs')
       }
     } catch (err: unknown) {
-      const msg =
-        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
-        'Failed to log run. Please try again.'
-      toast.error(msg)
+      const axiosErr = err as { code?: string; message?: string; response?: { status?: number; data?: { message?: string } } }
+      let msg = axiosErr.response?.data?.message || axiosErr.message || 'Failed to log run. Please try again.'
+      if (axiosErr.code === 'ECONNABORTED' || msg.toLowerCase().includes('timeout')) {
+        msg = 'Request timed out (database cold-start). Your run might have been saved. Please check your history before submitting again!'
+      }
+      toast.error(msg, { duration: 6000 })
     } finally {
       setSubmitting(false)
     }
@@ -201,8 +222,15 @@ export default function LogRunPage() {
         autoFilled.add('distanceKm')
       }
       if (data.durationMinutes) {
-        updateField('durationMinutes', data.durationMinutes.toFixed(1))
-        autoFilled.add('durationMinutes')
+        const totalSecs = Math.round(data.durationMinutes * 60)
+        const h = Math.floor(totalSecs / 3600)
+        const m = Math.floor((totalSecs % 3600) / 60)
+        const s = totalSecs % 60
+
+        updateField('durationHours', h > 0 ? h.toString() : '0')
+        updateField('durationMinutes', m.toString().padStart(2, '0'))
+        updateField('durationSeconds', s.toString().padStart(2, '0'))
+        autoFilled.add('duration')
       }
       if (data.activityDate) {
         updateField('runDate', data.activityDate.split('T')[0])
@@ -359,27 +387,50 @@ export default function LogRunPage() {
           {errors.distanceKm && <p className="error-text">{errors.distanceKm}</p>}
         </div>
 
-        {/* Duration */}
+        {/* Duration (Hours : Minutes : Seconds) */}
         <div>
-          <label htmlFor="run-duration" className="label">Duration (minutes)</label>
-          <div className="relative">
-            <Timer size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[hsl(var(--color-text-muted))]" />
-            <input
-              id="run-duration"
-              type="number"
-              step="0.1"
-              min="0.1"
-              max="1440"
-              value={form.durationMinutes}
-              onChange={(e) => updateField('durationMinutes', e.target.value)}
-              placeholder="26"
-              className={`input pl-9 ${importedFields.has('durationMinutes') ? 'ring-1 ring-[hsl(var(--color-brand))]' : ''} ${errors.durationMinutes ? 'input-error' : ''}`}
-            />
-            {importedFields.has('durationMinutes') && (
-              <CheckCircle size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-[hsl(var(--color-brand))]" />
+          <label className="label">Duration (Hours : Minutes : Seconds)</label>
+          <div className={`flex items-center gap-2 p-2.5 rounded-xl bg-[hsl(var(--color-surface))] border border-[hsl(var(--color-border))] ${importedFields.has('duration') ? 'ring-1 ring-[hsl(var(--color-brand))]' : ''} ${errors.duration ? 'border-red-500 ring-1 ring-red-500' : ''}`}>
+            <Timer size={16} className="text-[hsl(var(--color-text-muted))] ml-1 shrink-0" />
+            <div className="flex items-center gap-1.5 w-full">
+              <input
+                id="run-duration-hours"
+                type="number"
+                min="0"
+                max="23"
+                value={form.durationHours}
+                onChange={(e) => updateField('durationHours', e.target.value)}
+                placeholder="0"
+                className="w-full bg-transparent text-center focus:outline-none text-[hsl(var(--color-text))] placeholder-[hsl(var(--color-text-muted))]"
+              />
+              <span className="text-[hsl(var(--color-text-muted))] select-none font-bold">:</span>
+              <input
+                id="run-duration-minutes"
+                type="number"
+                min="0"
+                max="59"
+                value={form.durationMinutes}
+                onChange={(e) => updateField('durationMinutes', e.target.value)}
+                placeholder="00"
+                className="w-full bg-transparent text-center focus:outline-none text-[hsl(var(--color-text))] placeholder-[hsl(var(--color-text-muted))]"
+              />
+              <span className="text-[hsl(var(--color-text-muted))] select-none font-bold">:</span>
+              <input
+                id="run-duration-seconds"
+                type="number"
+                min="0"
+                max="59"
+                value={form.durationSeconds}
+                onChange={(e) => updateField('durationSeconds', e.target.value)}
+                placeholder="00"
+                className="w-full bg-transparent text-center focus:outline-none text-[hsl(var(--color-text))] placeholder-[hsl(var(--color-text-muted))]"
+              />
+            </div>
+            {importedFields.has('duration') && (
+              <CheckCircle size={14} className="text-[hsl(var(--color-brand))] mr-1 shrink-0" />
             )}
           </div>
-          {errors.durationMinutes && <p className="error-text">{errors.durationMinutes}</p>}
+          {errors.duration && <p className="error-text">{errors.duration}</p>}
         </div>
 
         {/* Date */}

@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react'
-import { Trophy, Flame, MapPin, Medal } from 'lucide-react'
+import { Trophy, Flame, MapPin, Medal, Calendar } from 'lucide-react'
 import { useAuthStore } from '../stores/authStore'
 import leaderboardApi from '../api/leaderboard'
 import LoadingSpinner from '../components/ui/LoadingSpinner'
@@ -10,7 +10,7 @@ export default function LeaderboardPage() {
   const { user } = useAuthStore()
   const [entries, setEntries] = useState<LeaderboardEntry[]>([])
   const [loading, setLoading] = useState(true)
-  const [rankType, setRankType] = useState<'points' | 'streak'>('points')
+  const [rankType, setRankType] = useState<'points' | 'streak' | 'weekly'>('points')
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -78,6 +78,17 @@ export default function LeaderboardPage() {
           <Flame size={14} />
           Streaks
         </button>
+        <button
+          onClick={() => setRankType('weekly')}
+          className={`flex items-center gap-1.5 px-4 py-2 rounded-[var(--radius-sm)] text-sm font-medium transition-all ${
+            rankType === 'weekly'
+              ? 'bg-[hsl(var(--color-surface))] text-[hsl(var(--color-text))] shadow-sm'
+              : 'text-[hsl(var(--color-text-muted))]'
+          }`}
+        >
+          <Calendar size={14} />
+          7-Day
+        </button>
       </div>
 
       {loading ? (
@@ -96,8 +107,17 @@ export default function LeaderboardPage() {
           <div className="hidden sm:grid grid-cols-12 gap-2 px-4 py-3 border-b border-[hsl(var(--color-border))] text-xs font-medium uppercase tracking-wider text-[hsl(var(--color-text-muted))]">
             <div className="col-span-1">Rank</div>
             <div className="col-span-4">Runner</div>
-            <div className="col-span-2 text-right">Points</div>
-            <div className="col-span-2 text-right">Streak</div>
+            {rankType === 'streak' ? (
+              <>
+                <div className="col-span-2 text-right">Streak</div>
+                <div className="col-span-2 text-right">Points</div>
+              </>
+            ) : (
+              <>
+                <div className="col-span-2 text-right">{rankType === 'weekly' ? '7-Day Pts' : 'Points'}</div>
+                <div className="col-span-2 text-right">Streak</div>
+              </>
+            )}
             <div className="col-span-3 text-right">Distance</div>
           </div>
 
@@ -132,21 +152,45 @@ export default function LeaderboardPage() {
                     </div>
                   </div>
 
-                  {/* Points */}
-                  <div className="col-span-4 sm:col-span-2 text-right">
-                    <span className="text-sm font-semibold text-[hsl(var(--color-text))]">
-                      {entry.totalPoints.toLocaleString()}
-                    </span>
-                    <span className="text-xs text-[hsl(var(--color-text-muted))] ml-1 hidden sm:inline">pts</span>
-                  </div>
-
-                  {/* Streak */}
-                  <div className="hidden sm:flex col-span-2 items-center justify-end gap-1">
-                    <Flame size={14} className={entry.currentStreak > 0 ? 'text-[hsl(var(--color-fire))]' : 'text-[hsl(var(--color-text-muted))]'} />
-                    <span className="text-sm font-medium text-[hsl(var(--color-text))]">
-                      {entry.currentStreak}
-                    </span>
-                  </div>
+                  {/* Dynamic Columns based on rankType */}
+                  {rankType === 'streak' ? (
+                    <>
+                      {/* Primary metric: Streak (Visible on mobile, col-span-2 on desktop) */}
+                      <div className="col-span-4 sm:col-span-2 text-right flex items-center justify-end gap-1">
+                        <Flame size={14} className={entry.currentStreak > 0 ? 'text-[hsl(var(--color-fire))]' : 'text-[hsl(var(--color-text-muted))]'} />
+                        <span className="text-sm font-semibold text-[hsl(var(--color-text))]">
+                          {entry.currentStreak}
+                        </span>
+                        <span className="text-xs text-[hsl(var(--color-text-muted))] hidden sm:inline">days</span>
+                      </div>
+                      {/* Secondary metric: Points (Desktop only) */}
+                      <div className="hidden sm:block col-span-2 text-right">
+                        <span className="text-sm font-medium text-[hsl(var(--color-text))]">
+                          {entry.totalPoints.toLocaleString()}
+                        </span>
+                        <span className="text-xs text-[hsl(var(--color-text-muted))] ml-1">pts</span>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      {/* Primary metric: Points (Visible on mobile, col-span-2 on desktop) */}
+                      <div className="col-span-4 sm:col-span-2 text-right">
+                        <span className="text-sm font-semibold text-[hsl(var(--color-text))]">
+                          {entry.totalPoints.toLocaleString()}
+                        </span>
+                        <span className="text-xs text-[hsl(var(--color-text-muted))] ml-1">
+                          {rankType === 'weekly' ? 'pts (7d)' : 'pts'}
+                        </span>
+                      </div>
+                      {/* Secondary metric: Streak (Desktop only) */}
+                      <div className="hidden sm:flex col-span-2 items-center justify-end gap-1">
+                        <Flame size={14} className={entry.currentStreak > 0 ? 'text-[hsl(var(--color-fire))]' : 'text-[hsl(var(--color-text-muted))]'} />
+                        <span className="text-sm font-medium text-[hsl(var(--color-text))]">
+                          {entry.currentStreak}
+                        </span>
+                      </div>
+                    </>
+                  )}
 
                   {/* Distance */}
                   <div className="hidden sm:flex col-span-3 items-center justify-end gap-1">

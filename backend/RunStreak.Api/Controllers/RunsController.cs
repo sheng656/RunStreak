@@ -32,13 +32,20 @@ public class RunsController(IRunService runService, IScreenshotImportService scr
             return Unauthorized();
         }
 
-        var (run, newlyUnlockedBadges) = await _runService.LogRunAsync(userId, request);
+        try
+        {
+            var (run, newlyUnlockedBadges) = await _runService.LogRunAsync(userId, request);
 
-        return CreatedAtAction(
-            nameof(GetRunById),
-            new { id = run.Id },
-            new { run, newlyUnlockedBadges }
-        );
+            return CreatedAtAction(
+                nameof(GetRunById),
+                new { id = run.Id },
+                new { run, newlyUnlockedBadges }
+            );
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new { message = ex.Message });
+        }
     }
 
     /// <summary>

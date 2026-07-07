@@ -2,24 +2,48 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
   Flame, Trophy, MapPin, TrendingUp, Plus,
-  Medal, Zap, CalendarDays,
+  Medal, Zap, CalendarDays, Shield,
 } from 'lucide-react'
 import { useAuthStore } from '../stores/authStore'
 import { useGamificationStore } from '../stores/gamificationStore'
 import runsApi from '../api/runs'
 import usersApi from '../api/users'
+import streakFreezeApi from '../api/streakFreeze'
 import StatCard from '../components/ui/StatCard'
 import EmptyState from '../components/ui/EmptyState'
 import LoadingSpinner from '../components/ui/LoadingSpinner'
+import toast from 'react-hot-toast'
 import type { Run, UserBadge } from '../types/api'
 
 export default function DashboardPage() {
-  const { user } = useAuthStore()
+  const { user, setUser } = useAuthStore()
   const { setUserStats } = useGamificationStore()
 
   const [recentRuns, setRecentRuns] = useState<Run[]>([])
   const [recentBadges, setRecentBadges] = useState<UserBadge[]>([])
   const [loading, setLoading] = useState(true)
+  const [purchasing, setPurchasing] = useState(false)
+
+  async function handlePurchaseFreeze() {
+    if (!user) return
+    setPurchasing(true)
+    try {
+      const res = await streakFreezeApi.purchase()
+      toast.success(res.data.message)
+      setUser({
+        ...user,
+        streakFreezeCount: res.data.streakFreezeCount,
+        totalPoints: res.data.totalPoints,
+      })
+    } catch (err: unknown) {
+      const msg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+        'Failed to purchase shield.'
+      toast.error(msg)
+    } finally {
+      setPurchasing(false)
+    }
+  }
 
   useEffect(() => {
     async function loadDashboard() {
@@ -90,31 +114,68 @@ export default function DashboardPage() {
           </div>
 
           {/* Streak display */}
-          <div className="mt-6 flex items-center gap-4">
-            <div
-              className={`flex items-center justify-center w-20 h-20 rounded-2xl ${
-                streakActive
-                  ? 'gradient-fire animate-pulse-glow'
-                  : 'bg-[hsl(var(--color-surface-2))]'
-              }`}
-            >
-              <Flame
-                size={40}
-                className={streakActive ? 'text-white animate-fire' : 'text-[hsl(var(--color-text-muted))]'}
-              />
-            </div>
-            <div>
-              <div className="flex items-baseline gap-1">
-                <span className="text-4xl sm:text-5xl font-extrabold text-[hsl(var(--color-text))]">
-                  {user.currentStreak}
-                </span>
-                <span className="text-lg text-[hsl(var(--color-text-muted))] font-medium">
-                  day{user.currentStreak !== 1 ? 's' : ''}
-                </span>
+          <div className="mt-6 flex flex-col md:flex-row md:items-center md:justify-between gap-6 border-t border-[hsl(var(--color-border))/0.3] pt-6">
+            <div className="flex items-center gap-4">
+              <div
+                className={`relative flex items-center justify-center w-20 h-20 rounded-2xl ${
+                  streakActive
+                    ? 'gradient-fire animate-pulse-glow'
+                    : 'bg-[hsl(var(--color-surface-2))]'
+                }`}
+              >
+                <Flame
+                  size={40}
+                  className={streakActive ? 'text-white animate-fire' : 'text-[hsl(var(--color-text-muted))]'}
+                />
+                {user.streakFreezeCount > 0 && (
+                  <div className="absolute -top-2 -right-2 bg-blue-500 border-2 border-[hsl(var(--color-surface))] text-white text-xs font-black w-6 h-6 rounded-full flex items-center justify-center shadow-lg" title={`${user.streakFreezeCount} Rest Day Tickets Available`}>
+                    <Shield size={12} fill="white" className="inline" />
+                  </div>
+                )}
               </div>
-              <p className="text-sm text-[hsl(var(--color-text-muted))]">
-                Current streak · Best: {user.longestStreak} days
-              </p>
+              <div>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-4xl sm:text-5xl font-extrabold text-[hsl(var(--color-text))]">
+                    {user.currentStreak}
+                  </span>
+                  <span className="text-lg text-[hsl(var(--color-text-muted))] font-medium">
+                    day{user.currentStreak !== 1 ? 's' : ''}
+                  </span>
+                  {user.streakFreezeCount > 0 && (
+                    <span className="inline-flex items-center gap-1 ml-2.5 px-2 py-0.5 rounded-full bg-blue-500/10 border border-blue-500/30 text-blue-400 text-xs font-semibold animate-pulse">
+                      <Shield size={10} fill="currentColor" />
+                      Protected
+                    </span>
+                  )}
+                </div>
+                <p className="text-sm text-[hsl(var(--color-text-muted))]">
+                  Current streak · Best: {user.longestStreak} days
+                </p>
+              </div>
+            </div>
+
+            {/* Streak Freeze Purchase panel */}
+            <div className="flex flex-col items-start md:items-end gap-1.5 bg-[hsl(var(--color-surface-2))]/30 border border-[hsl(var(--color-border))/0.5] rounded-2xl p-4 md:p-3 shrink-0">
+              <div className="text-xs text-[hsl(var(--color-text-muted))] flex items-center gap-1.5 font-semibold uppercase tracking-wider">
+                <Shield size={12} className="text-blue-400" />
+                <span>Rest Day Tickets: <strong className="text-[hsl(var(--color-text))]">{user.streakFreezeCount} / 5</strong></span>
+              </div>
+              <button
+                type="button"
+                onClick={handlePurchaseFreeze}
+                disabled={purchasing || user.streakFreezeCount >= 5 || user.totalPoints < 256}
+                className="btn btn-secondary btn-sm flex items-center gap-1.5 shadow-sm text-xs py-1.5 border-[hsl(var(--color-border))] bg-[hsl(var(--color-surface-2))] hover:bg-[hsl(var(--color-border))] disabled:opacity-50"
+                title="Use 256 points to purchase a rest day ticket to protect your streak."
+              >
+                {purchasing ? (
+                  <div className="w-3.5 h-3.5 border-2 border-[hsl(var(--color-text-muted))]/30 border-t-[hsl(var(--color-text))] rounded-full animate-spin" />
+                ) : (
+                  <>
+                    <Zap size={12} className="text-amber-500" />
+                    <span>Buy Shield (256 pts)</span>
+                  </>
+                )}
+              </button>
             </div>
           </div>
         </div>

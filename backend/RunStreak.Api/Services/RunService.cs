@@ -9,12 +9,14 @@ public class RunService(
     AppDbContext context,
     IPointsService pointsService,
     IStreakService streakService,
-    IBadgeService badgeService) : IRunService
+    IBadgeService badgeService,
+    IStreakFreezeService streakFreezeService) : IRunService
 {
     private readonly AppDbContext _context = context;
     private readonly IPointsService _pointsService = pointsService;
     private readonly IStreakService _streakService = streakService;
     private readonly IBadgeService _badgeService = badgeService;
+    private readonly IStreakFreezeService _streakFreezeService = streakFreezeService;
 
     public async Task<RunDto?> GetRunByIdAsync(Guid runId, Guid userId)
     {
@@ -60,13 +62,27 @@ public class RunService(
                 var user = await _context.Users.FindAsync(userId) 
                     ?? throw new KeyNotFoundException("User not found.");
 
+                // Check for duplicate run to prevent double-submit (within 5 minutes)
+                var cutoffTime = DateTime.UtcNow.AddMinutes(-5);
+                var isDuplicate = await _context.Runs.AnyAsync(r =>
+                    r.UserId == userId &&
+                    r.RunDate == request.RunDate.Date &&
+                    r.DistanceKm == request.DistanceKm &&
+                    r.DurationMinutes == request.DurationMinutes &&
+                    r.CreatedAt >= cutoffTime);
+
+                if (isDuplicate)
+                {
+                    throw new InvalidOperationException("A duplicate run with the same distance, duration, and date was logged within the last 5 minutes. Please check your history.");
+                }
+
                 // 1. Create run entity
                 var run = new Run
                 {
                     UserId = userId,
                     DistanceKm = request.DistanceKm,
                     DurationMinutes = request.DurationMinutes,
-                    RunDate = request.RunDate.ToUniversalTime(),
+                    RunDate = request.RunDate.Date,
                     Notes = request.Notes,
                     PerceivedEffort = request.PerceivedEffort,
                     PaceMinPerKm = request.DurationMinutes / request.DistanceKm,
@@ -96,6 +112,9 @@ public class RunService(
                 user.UpdatedAt = DateTime.UtcNow;
 
                 await _context.SaveChangesAsync();
+
+                // 4b. Check and auto-earn streak freezes
+                await _streakFreezeService.CheckAutoEarnAsync(userId);
 
                 // 5. Check and award badges
                 var newlyUnlockedBadges = await _badgeService.CheckAndAwardBadgesAsync(userId);
@@ -131,7 +150,7 @@ public class RunService(
                 run.DistanceKm = request.DistanceKm;
                 run.DurationMinutes = request.DurationMinutes;
                 run.PaceMinPerKm = request.DurationMinutes / request.DistanceKm;
-                run.RunDate = request.RunDate.ToUniversalTime();
+                run.RunDate = request.RunDate.Date;
                 run.Notes = request.Notes;
                 run.PerceivedEffort = request.PerceivedEffort;
                 run.UpdatedAt = DateTime.UtcNow;
@@ -164,6 +183,9 @@ public class RunService(
                 user.UpdatedAt = DateTime.UtcNow;
 
                 await _context.SaveChangesAsync();
+
+                // Check and auto-earn streak freezes
+                await _streakFreezeService.CheckAutoEarnAsync(userId);
 
                 // Check if updates unlocked new badges
                 var newlyUnlockedBadges = await _badgeService.CheckAndAwardBadgesAsync(userId);

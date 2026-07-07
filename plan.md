@@ -1,7 +1,7 @@
 # RunStreak — Project Plan (LIVE)
 
 > **Last updated:** 2026-07-07
-> **Current focus:** Phase 10 — Submission Preparation + production auth stability hotfixes
+> **Current focus:** Phase 10 — Submission Preparation (UX fixes + Streak Freeze + Rolling Leaderboard complete)
 > **Overall status:** ✅ Phase 0-8 complete, Phase 10 in progress
 
 This file is the single source of truth for what's done, what's in progress, and what's next. Agents must read it at the start of every session and update it at the end.
@@ -375,3 +375,6 @@ Phase 0 (scaffold)
 | 6 | Password hashing: ASP.NET Core Identity `PasswordHasher<T>` (PBKDF2) | Decided | Documented in AGENTS.md §5.2 |
 | 7 | Frontend visual identity / design system | Decided | Tailwind CSS v4.3 + modern glassmorphism |
 | 8 | Simplified bearer-only auth (access in memory, refresh in localStorage) | Decided | `specs/decisions/006-simplified-bearer-auth.md` |
+| 9 | Streak Freeze Rest Day Ticket implementation | Decided | `specs/decisions/007-streak-freeze.md` |
+| 10 | Rolling 7-day leaderboard tab | Decided | `specs/decisions/008-rolling-7day-leaderboard.md` |
+| 11 | Timezone-agnostic RunDate and UTC+14 tolerance | Decided | `specs/decisions/009-rundate-timezone-fix.md` |

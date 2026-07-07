@@ -16,6 +16,7 @@ public class User
     public int LongestStreak { get; set; }
     public decimal TotalDistanceKm { get; set; }
     public int TotalRuns { get; set; }
+    public int StreakFreezeCount { get; set; }
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
@@ -24,4 +25,5 @@ public class User
     public ICollection<Run> Runs { get; set; } = [];
     public ICollection<UserBadge> UserBadges { get; set; } = [];
     public ICollection<RefreshToken> RefreshTokens { get; set; } = [];
+    public ICollection<StreakFreeze> StreakFreezes { get; set; } = [];
 }

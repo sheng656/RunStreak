@@ -14,6 +14,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<Badge> Badges => Set<Badge>();
     public DbSet<UserBadge> UserBadges => Set<UserBadge>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
+    public DbSet<StreakFreeze> StreakFreezes => Set<StreakFreeze>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -99,6 +100,20 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             entity.HasOne(rt => rt.User)
                 .WithMany(u => u.RefreshTokens)
                 .HasForeignKey(rt => rt.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // ── StreakFreezes ───────────────────────────────────────────────────
+        modelBuilder.Entity<StreakFreeze>(entity =>
+        {
+            entity.HasKey(sf => sf.Id);
+            entity.HasIndex(sf => new { sf.UserId, sf.Date });
+            entity.Property(sf => sf.Type).HasMaxLength(50).IsRequired();
+            entity.Property(sf => sf.Source).HasMaxLength(50).IsRequired();
+
+            entity.HasOne(sf => sf.User)
+                .WithMany(u => u.StreakFreezes)
+                .HasForeignKey(sf => sf.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
     }

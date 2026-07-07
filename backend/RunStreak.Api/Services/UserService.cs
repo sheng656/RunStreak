@@ -29,6 +29,7 @@ public class UserService(AppDbContext context) : IUserService
             LongestStreak = user.LongestStreak,
             TotalDistanceKm = user.TotalDistanceKm,
             TotalRuns = user.TotalRuns,
+            StreakFreezeCount = user.StreakFreezeCount,
             CreatedAt = user.CreatedAt
         };
     }
@@ -56,6 +57,7 @@ public class UserService(AppDbContext context) : IUserService
             LongestStreak = user.LongestStreak,
             TotalDistanceKm = user.TotalDistanceKm,
             TotalRuns = user.TotalRuns,
+            StreakFreezeCount = user.StreakFreezeCount,
             CreatedAt = user.CreatedAt
         };
     }

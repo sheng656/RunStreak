@@ -283,4 +283,154 @@ public class GamificationTests
     }
 
     #endregion
+
+    #region Streak Freeze & Weekly Leaderboard Tests
+
+    [Fact]
+    public async Task RecalculateStreakAsync_ShouldMaintainStreak_WhenStreakFreezeIsUsedOnGapDays()
+    {
+        // Arrange
+        using var context = CreateContext();
+        var streakService = new StreakService(context);
+        var userId = Guid.NewGuid();
+
+        // Add user with 1 streak freeze count
+        var user = new User
+        {
+            Id = userId,
+            Username = "freezer",
+            Email = "freezer@example.com",
+            StreakFreezeCount = 1
+        };
+        context.Users.Add(user);
+
+        // Add run 2 days ago and a run today (gap of yesterday)
+        var today = DateTime.UtcNow.Date;
+        context.Runs.AddRange(
+            new Run { UserId = userId, DistanceKm = 5, DurationMinutes = 30, RunDate = today.AddDays(-2) },
+            new Run { UserId = userId, DistanceKm = 5, DurationMinutes = 30, RunDate = today }
+        );
+        await context.SaveChangesAsync();
+
+        // Act
+        // This should auto-apply the 1 available freeze to yesterday and preserve streak!
+        var result = await streakService.RecalculateStreakAsync(userId);
+
+        // Assert
+        Assert.Equal(3, result.CurrentStreak); // 2 days ago + yesterday (freeze) + today = 3
+        Assert.Equal(0, user.StreakFreezeCount); // Freeze was consumed
+
+        // Verify a used freeze was logged in DB
+        var loggedFreeze = await context.StreakFreezes.FirstOrDefaultAsync(sf => sf.UserId == userId);
+        Assert.NotNull(loggedFreeze);
+        Assert.Equal("used", loggedFreeze.Type);
+        Assert.Equal(today.AddDays(-1), loggedFreeze.Date.Date);
+    }
+
+    [Fact]
+    public async Task StreakFreezeService_PurchaseStreakFreeze_ShouldDeductPointsAndIncrementCount()
+    {
+        // Arrange
+        using var context = CreateContext();
+        var freezeService = new StreakFreezeService(context);
+        var userId = Guid.NewGuid();
+
+        var user = new User
+        {
+            Id = userId,
+            Username = "buyer",
+            Email = "buyer@example.com",
+            TotalPoints = 300,
+            StreakFreezeCount = 0
+        };
+        context.Users.Add(user);
+        await context.SaveChangesAsync();
+
+        // Act
+        var success = await freezeService.PurchaseStreakFreezeAsync(userId);
+
+        // Assert
+        Assert.True(success);
+        Assert.Equal(1, user.StreakFreezeCount);
+        Assert.Equal(44, user.TotalPoints); // 300 - 256 = 44
+    }
+
+    [Fact]
+    public async Task StreakFreezeService_CheckAutoEarn_ShouldAwardFreezeOnMilestones()
+    {
+        // Arrange
+        using var context = CreateContext();
+        var freezeService = new StreakFreezeService(context);
+        var userId = Guid.NewGuid();
+
+        var user = new User
+        {
+            Id = userId,
+            Username = "earner",
+            Email = "earner@example.com",
+            CurrentStreak = 5,
+            TotalDistanceKm = 65m,
+            StreakFreezeCount = 0
+        };
+        context.Users.Add(user);
+
+        // Add a run so latest run date check doesn't return default
+        context.Runs.Add(new Run
+        {
+            UserId = userId,
+            DistanceKm = 65m,
+            DurationMinutes = 300m,
+            RunDate = DateTime.UtcNow.Date
+        });
+        await context.SaveChangesAsync();
+
+        // Act
+        var earned = await freezeService.CheckAutoEarnAsync(userId);
+
+        // Assert
+        // Should earn 2 freezes: 1 for streak 5, 1 for distance 65km (> 60km)
+        Assert.Equal(2, earned);
+        Assert.Equal(2, user.StreakFreezeCount);
+    }
+
+    [Fact]
+    public async Task LeaderboardService_WeeklyRanking_ShouldOnlySumLast7DaysPoints()
+    {
+        // Arrange
+        using var context = CreateContext();
+        var leaderboardService = new LeaderboardService(context);
+        
+        var user1 = new User { Id = Guid.NewGuid(), Username = "u1", DisplayName = "U1" };
+        var user2 = new User { Id = Guid.NewGuid(), Username = "u2", DisplayName = "U2" };
+        context.Users.AddRange(user1, user2);
+
+        // User 1 has run today (100 points) and run 10 days ago (500 points)
+        var today = DateTime.UtcNow.Date;
+        context.Runs.AddRange(
+            new Run { UserId = user1.Id, DistanceKm = 5, DurationMinutes = 30, PointsEarned = 100, RunDate = today },
+            new Run { UserId = user1.Id, DistanceKm = 5, DurationMinutes = 30, PointsEarned = 500, RunDate = today.AddDays(-10) },
+            // User 2 has run 2 days ago (200 points)
+            new Run { UserId = user2.Id, DistanceKm = 5, DurationMinutes = 30, PointsEarned = 200, RunDate = today.AddDays(-2) }
+        );
+        await context.SaveChangesAsync();
+
+        // Act
+        var leaderboard = await leaderboardService.GetLeaderboardAsync("weekly", 1, 10);
+
+        // Assert
+        // For last 7 days:
+        // User 2: 200 points
+        // User 1: 100 points (500 points run is excluded)
+        Assert.Equal(2, leaderboard.Count);
+        
+        var first = leaderboard[0];
+        Assert.Equal(user2.Id, first.UserId);
+        Assert.Equal(200, first.TotalPoints);
+
+        var second = leaderboard[1];
+        Assert.Equal(user1.Id, second.UserId);
+        Assert.Equal(100, second.TotalPoints);
+    }
+
+    #endregion
 }

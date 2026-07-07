@@ -156,7 +156,7 @@ public static class DbSeeder
             {
                 Name = "5K Finisher",
                 Description = "Complete a single run of 5km or more.",
-                IconUrl = "https://api.iconify.design/noto/checkmark-button.svg",
+                IconUrl = "https://api.iconify.design/noto/check-mark-button.svg",
                 Category = "distance", Rarity = "common",
                 CriteriaJson = "{\"type\":\"single_run_distance_km\",\"threshold\":5.0}",
                 PointsReward = 100
@@ -174,7 +174,7 @@ public static class DbSeeder
             {
                 Name = "Half Marathon",
                 Description = "Run 21.1km or more in a single activity. That's a half marathon!",
-                IconUrl = "https://api.iconify.design/noto/medal.svg",
+                IconUrl = "https://api.iconify.design/noto/sports-medal.svg",
                 Category = "distance", Rarity = "epic",
                 CriteriaJson = "{\"type\":\"single_run_distance_km\",\"threshold\":21.1}",
                 PointsReward = 500

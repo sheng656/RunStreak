@@ -280,6 +280,7 @@ public class AuthService : IAuthService
             LongestStreak = user.LongestStreak,
             TotalDistanceKm = user.TotalDistanceKm,
             TotalRuns = user.TotalRuns,
+            StreakFreezeCount = user.StreakFreezeCount,
             CreatedAt = user.CreatedAt
         };
     }

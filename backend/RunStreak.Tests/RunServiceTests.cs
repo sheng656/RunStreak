@@ -28,7 +28,8 @@ public class RunServiceTests
         var pointsService = new PointsService();
         var streakService = new StreakService(context);
         var badgeService = new BadgeService(context);
-        var runService = new RunService(context, pointsService, streakService, badgeService);
+        var streakFreezeService = new StreakFreezeService(context);
+        var runService = new RunService(context, pointsService, streakService, badgeService, streakFreezeService);
 
         var user = new User
         {
@@ -88,7 +89,8 @@ public class RunServiceTests
         var pointsService = new PointsService();
         var streakService = new StreakService(context);
         var badgeService = new BadgeService(context);
-        var runService = new RunService(context, pointsService, streakService, badgeService);
+        var streakFreezeService = new StreakFreezeService(context);
+        var runService = new RunService(context, pointsService, streakService, badgeService, streakFreezeService);
 
         var user = new User
         {
@@ -153,7 +155,8 @@ public class RunServiceTests
         var pointsService = new PointsService();
         var streakService = new StreakService(context);
         var badgeService = new BadgeService(context);
-        var runService = new RunService(context, pointsService, streakService, badgeService);
+        var streakFreezeService = new StreakFreezeService(context);
+        var runService = new RunService(context, pointsService, streakService, badgeService, streakFreezeService);
 
         var user = new User
         {

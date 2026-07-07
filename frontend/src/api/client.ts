@@ -26,6 +26,7 @@ export function clearStoredRefreshToken(): void {
 // consistently.
 const apiClient: AxiosInstance = axios.create({
   baseURL: import.meta.env.VITE_API_URL ?? '/api',
+  timeout: 60000,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -132,3 +133,4 @@ export { default as runsApi } from './runs'
 export { default as usersApi } from './users'
 export { default as leaderboardApi } from './leaderboard'
 export { default as badgesApi } from './badges'
+export { default as streakFreezeApi } from './streakFreeze'
