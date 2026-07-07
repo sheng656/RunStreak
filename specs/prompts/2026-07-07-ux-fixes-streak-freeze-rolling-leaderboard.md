@@ -24,4 +24,15 @@ I also observed two bugs during the review:
 - Added 4 new integration unit tests in `GamificationTests.cs` and verified 35/35 backend and 18/18 frontend tests passed successfully.
 
 ## Follow-up prompts
-- The user reviewed and approved the v2 implementation plan.
+- The user highlighted typescript compilation errors on frontend build and requested a visual avatar picker of 48 options to edit display names and select avatars from.
+- Handled two bugfixes to make `npm run build` succeed:
+  - Added `streakFreezeCount` to `UserProfile` in `authStore.ts` and updated mock test data in `authStore.test.ts`.
+  - Replaced stale reference to `duration` with `totalDurationMinutes` in `LogRunPage.tsx` pace preview condition.
+- Created `AvatarPicker.tsx` component with 48 distinct avatar seeds (16 Characters, 16 Robots, 16 Emojis) powered by the DiceBear SVG API.
+- Integrated `AvatarPicker` in `ProfilePage.tsx`, replacing the raw URL text input field.
+- Updated `ProfilePage.tsx`, `Navbar.tsx`, and `LeaderboardPage.tsx` to render the user's selected avatar image dynamically (with initials fallback).
+- Ran builds and tests successfully on Windows PowerShell.
+- The user requested further styles to be made available (avataaars, micah, lorelei, personas, miniavs, notionists, open-peeps, croodles, pixel-art, identicon, big-ears, big-smile, thumbs, shapes, rings, and initials) with at least 24 options per style.
+- Redesigned `AvatarPicker.tsx` to support 14 distinct visual categories with a scrollable chips selector.
+- Curated 24 options/seeds per style and 36 presets for initials, generating over 300+ unique choices.
+- Verified TypeScript compilation type safety and build success.
