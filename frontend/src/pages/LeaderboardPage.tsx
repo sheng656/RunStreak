@@ -141,9 +141,17 @@ export default function LeaderboardPage() {
 
                   {/* User info */}
                   <div className="col-span-6 sm:col-span-4 flex items-center gap-2 min-w-0">
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[hsl(var(--color-brand))] to-[hsl(var(--color-fire))] flex items-center justify-center text-white text-xs font-bold shrink-0">
-                      {entry.displayName?.charAt(0)?.toUpperCase() || '?'}
-                    </div>
+                    {entry.avatarUrl ? (
+                      <img
+                        src={entry.avatarUrl}
+                        alt={entry.displayName || entry.username}
+                        className="w-8 h-8 rounded-full object-cover border border-[hsl(var(--color-border))]/60 shrink-0"
+                      />
+                    ) : (
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[hsl(var(--color-brand))] to-[hsl(var(--color-fire))] flex items-center justify-center text-white text-xs font-bold shrink-0">
+                        {entry.displayName?.charAt(0)?.toUpperCase() || '?'}
+                      </div>
+                    )}
                     <div className="min-w-0">
                       <p className={`text-sm font-medium truncate ${isMe ? 'text-[hsl(var(--color-brand))]' : 'text-[hsl(var(--color-text))]'}`}>
                         {entry.displayName || entry.username}

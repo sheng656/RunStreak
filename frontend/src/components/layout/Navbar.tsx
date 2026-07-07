@@ -71,9 +71,17 @@ export default function Navbar() {
                 to="/profile"
                 className="flex items-center gap-2 px-2 py-1 rounded-[var(--radius-sm)] hover:bg-[hsl(var(--color-surface-2))] transition-colors no-underline"
               >
-                <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[hsl(var(--color-brand))] to-[hsl(var(--color-fire))] flex items-center justify-center text-white text-xs font-bold">
-                  {user.displayName?.charAt(0)?.toUpperCase() || 'U'}
-                </div>
+                {user.avatarUrl ? (
+                  <img
+                    src={user.avatarUrl}
+                    alt={user.displayName || user.username}
+                    className="w-7 h-7 rounded-full object-cover border border-[hsl(var(--color-border))]"
+                  />
+                ) : (
+                  <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[hsl(var(--color-brand))] to-[hsl(var(--color-fire))] flex items-center justify-center text-white text-xs font-bold">
+                    {user.displayName?.charAt(0)?.toUpperCase() || 'U'}
+                  </div>
+                )}
                 <span className="text-sm font-medium text-[hsl(var(--color-text))]">
                   {user.displayName || user.username}
                 </span>

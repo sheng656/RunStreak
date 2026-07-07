@@ -378,3 +378,4 @@ Phase 0 (scaffold)
 | 9 | Streak Freeze Rest Day Ticket implementation | Decided | `specs/decisions/007-streak-freeze.md` |
 | 10 | Rolling 7-day leaderboard tab | Decided | `specs/decisions/008-rolling-7day-leaderboard.md` |
 | 11 | Timezone-agnostic RunDate and UTC+14 tolerance | Decided | `specs/decisions/009-rundate-timezone-fix.md` |
+| 12 | Visual Avatar Picker using 48 seeds and DiceBear HTTP API | Decided | `specs/decisions/010-avatar-picker-dicebear.md` |
