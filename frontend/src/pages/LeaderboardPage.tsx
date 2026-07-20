@@ -1,28 +1,51 @@
 import { useEffect, useState, useCallback } from 'react'
-import { Trophy, Flame, MapPin, Medal, Calendar } from 'lucide-react'
+import { Trophy, Flame, MapPin, Medal, Calendar, TrendingUp, TrendingDown, Minus, User } from 'lucide-react'
 import { useAuthStore } from '../stores/authStore'
 import leaderboardApi from '../api/leaderboard'
+import usersApi from '../api/users'
 import LoadingSpinner from '../components/ui/LoadingSpinner'
 import EmptyState from '../components/ui/EmptyState'
-import type { LeaderboardEntry } from '../types/api'
+import type { LeaderboardEntry, UserStats } from '../types/api'
+
+function DeltaBadge({ current, previous, unit = '' }: { current: number; previous: number; unit?: string }) {
+  const diff = current - previous
+  if (previous === 0 && current === 0) return <span className="text-xs text-[hsl(var(--color-text-muted))]">–</span>
+  if (diff === 0) return (
+    <span className="inline-flex items-center gap-0.5 text-xs text-[hsl(var(--color-text-muted))]">
+      <Minus size={10} /> same
+    </span>
+  )
+  const isUp = diff > 0
+  return (
+    <span className={`inline-flex items-center gap-0.5 text-xs font-semibold ${isUp ? 'text-emerald-400' : 'text-red-400'}`}>
+      {isUp ? <TrendingUp size={11} /> : <TrendingDown size={11} />}
+      {isUp ? '+' : ''}{typeof diff === 'number' && !Number.isInteger(diff) ? diff.toFixed(1) : diff}{unit}
+    </span>
+  )
+}
 
 export default function LeaderboardPage() {
   const { user } = useAuthStore()
   const [entries, setEntries] = useState<LeaderboardEntry[]>([])
   const [loading, setLoading] = useState(true)
   const [rankType, setRankType] = useState<'points' | 'streak' | 'weekly'>('points')
+  const [userStats, setUserStats] = useState<UserStats | null>(null)
 
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      const res = await leaderboardApi.get(rankType)
-      setEntries(res.data)
+      const [lbRes, statsRes] = await Promise.all([
+        leaderboardApi.get(rankType),
+        user ? usersApi.getStats(user.id) : Promise.resolve(null),
+      ])
+      setEntries(lbRes.data)
+      if (statsRes) setUserStats(statsRes.data)
     } catch {
       // Silently handle
     } finally {
       setLoading(false)
     }
-  }, [rankType])
+  }, [rankType, user])
 
   useEffect(() => {
     Promise.resolve().then(() => {
@@ -44,10 +67,13 @@ export default function LeaderboardPage() {
     return <span className="text-sm font-medium text-[hsl(var(--color-text-muted))] w-5 text-center">{rank}</span>
   }
 
+  // Determine current user's rank from entries
+  const myEntry = user ? entries.find(e => e.userId === user.id) : null
+
   return (
-    <div className="page-container">
+    <div className="page-container space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between">
         <div>
           <h1 className="page-title">Leaderboard</h1>
           <p className="page-subtitle">See how you stack up</p>
@@ -55,7 +81,7 @@ export default function LeaderboardPage() {
       </div>
 
       {/* Rank type toggle */}
-      <div className="flex gap-1 mb-6 bg-[hsl(var(--color-surface-2))] p-1 rounded-[var(--radius)] w-fit">
+      <div className="flex gap-1 bg-[hsl(var(--color-surface-2))] p-1 rounded-[var(--radius)] w-fit">
         <button
           onClick={() => setRankType('points')}
           className={`flex items-center gap-1.5 px-4 py-2 rounded-[var(--radius-sm)] text-sm font-medium transition-all ${
@@ -163,7 +189,7 @@ export default function LeaderboardPage() {
                   {/* Dynamic Columns based on rankType */}
                   {rankType === 'streak' ? (
                     <>
-                      {/* Primary metric: Streak (Visible on mobile, col-span-2 on desktop) */}
+                      {/* Primary metric: Streak */}
                       <div className="col-span-4 sm:col-span-2 text-right flex items-center justify-end gap-1">
                         <Flame size={14} className={entry.currentStreak > 0 ? 'text-[hsl(var(--color-fire))]' : 'text-[hsl(var(--color-text-muted))]'} />
                         <span className="text-sm font-semibold text-[hsl(var(--color-text))]">
@@ -181,7 +207,7 @@ export default function LeaderboardPage() {
                     </>
                   ) : (
                     <>
-                      {/* Primary metric: Points (Visible on mobile, col-span-2 on desktop) */}
+                      {/* Primary metric: Points */}
                       <div className="col-span-4 sm:col-span-2 text-right">
                         <span className="text-sm font-semibold text-[hsl(var(--color-text))]">
                           {entry.totalPoints.toLocaleString()}
@@ -210,6 +236,106 @@ export default function LeaderboardPage() {
                 </div>
               )
             })}
+          </div>
+        </div>
+      )}
+
+      {/* ─── You vs Your Past Self ─── (always visible) */}
+      {userStats && user && (
+        <div className="card overflow-hidden">
+          <div className="flex items-center gap-2 px-4 py-3 border-b border-[hsl(var(--color-border))]">
+            <User size={15} className="text-[hsl(var(--color-brand))]" />
+            <h2 className="text-sm font-semibold text-[hsl(var(--color-text))]">You vs Your Past Self</h2>
+            {myEntry && (
+              <span className="ml-auto text-xs text-[hsl(var(--color-text-muted))]">
+                Your rank: <strong className="text-[hsl(var(--color-text))]">#{myEntry.rank}</strong>
+              </span>
+            )}
+          </div>
+
+          <div className="p-4">
+            <p className="text-xs text-[hsl(var(--color-text-muted))] mb-4">
+              This week vs last week — the only real competition is yesterday's you.
+            </p>
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {/* Distance */}
+              <div className="flex flex-col gap-1 p-3 rounded-xl bg-[hsl(var(--color-surface-2))]/50 border border-[hsl(var(--color-border))]">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-[hsl(var(--color-text-muted))] flex items-center gap-1">
+                  <MapPin size={10} /> Distance
+                </span>
+                <span className="text-lg font-black text-[hsl(var(--color-text))]">
+                  {Number(userStats.weeklyDistanceKm).toFixed(1)} km
+                </span>
+                <div className="flex items-center gap-1">
+                  <span className="text-[10px] text-[hsl(var(--color-text-muted))]">
+                    last: {Number(userStats.lastWeekDistanceKm).toFixed(1)} km
+                  </span>
+                  <DeltaBadge current={userStats.weeklyDistanceKm} previous={userStats.lastWeekDistanceKm} unit=" km" />
+                </div>
+              </div>
+
+              {/* Runs */}
+              <div className="flex flex-col gap-1 p-3 rounded-xl bg-[hsl(var(--color-surface-2))]/50 border border-[hsl(var(--color-border))]">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-[hsl(var(--color-text-muted))] flex items-center gap-1">
+                  <Calendar size={10} /> Runs
+                </span>
+                <span className="text-lg font-black text-[hsl(var(--color-text))]">
+                  {userStats.weeklyRunCount}
+                </span>
+                <div className="flex items-center gap-1">
+                  <span className="text-[10px] text-[hsl(var(--color-text-muted))]">
+                    last: {userStats.lastWeekRunCount}
+                  </span>
+                  <DeltaBadge current={userStats.weeklyRunCount} previous={userStats.lastWeekRunCount} />
+                </div>
+              </div>
+
+              {/* Points */}
+              <div className="flex flex-col gap-1 p-3 rounded-xl bg-[hsl(var(--color-surface-2))]/50 border border-[hsl(var(--color-border))]">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-[hsl(var(--color-text-muted))] flex items-center gap-1">
+                  <Trophy size={10} /> Points
+                </span>
+                <span className="text-lg font-black text-[hsl(var(--color-fire))]">
+                  {userStats.weeklyPoints}
+                </span>
+                <div className="flex items-center gap-1">
+                  <span className="text-[10px] text-[hsl(var(--color-text-muted))]">
+                    last: {userStats.lastWeekPoints}
+                  </span>
+                  <DeltaBadge current={userStats.weeklyPoints} previous={userStats.lastWeekPoints} />
+                </div>
+              </div>
+
+              {/* Streak */}
+              <div className="flex flex-col gap-1 p-3 rounded-xl bg-[hsl(var(--color-surface-2))]/50 border border-[hsl(var(--color-border))]">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-[hsl(var(--color-text-muted))] flex items-center gap-1">
+                  <Flame size={10} /> Streak
+                </span>
+                <span className="text-lg font-black text-[hsl(var(--color-text))]">
+                  {user.currentStreak} days
+                </span>
+                <div className="flex items-center gap-1">
+                  <span className="text-[10px] text-[hsl(var(--color-text-muted))]">
+                    best: {user.longestStreak}d
+                  </span>
+                  <DeltaBadge current={user.currentStreak} previous={user.longestStreak > user.currentStreak ? user.longestStreak : user.currentStreak} />
+                </div>
+              </div>
+            </div>
+
+            {/* Best week callout */}
+            {userStats.bestWeekDistanceKm > 0 && (
+              <div className="mt-3 px-3 py-2 rounded-lg bg-amber-500/5 border border-amber-500/15 flex items-center gap-2">
+                <Trophy size={13} className="text-amber-400 shrink-0" />
+                <p className="text-xs text-[hsl(var(--color-text-muted))]">
+                  Your best week ever: <strong className="text-amber-400">{Number(userStats.bestWeekDistanceKm).toFixed(1)} km</strong>
+                  {userStats.weeklyDistanceKm >= userStats.bestWeekDistanceKm && userStats.bestWeekDistanceKm > 0 && (
+                    <span className="ml-1 text-emerald-400 font-semibold"> — you're matching it this week! 🏆</span>
+                  )}
+                </p>
+              </div>
+            )}
           </div>
         </div>
       )}

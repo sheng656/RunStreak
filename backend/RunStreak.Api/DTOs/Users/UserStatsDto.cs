@@ -10,4 +10,20 @@ public class UserStatsDto
     public decimal LongestRunKm { get; set; }
     public int CurrentStreak { get; set; }
     public int LongestStreak { get; set; }
+
+    // Weekly stats — calculated from runs in the current ISO week (Mon–Sun)
+    public decimal WeeklyDistanceKm { get; set; }
+    public int WeeklyRunCount { get; set; }
+    public decimal WeeklyGoalKm { get; set; }
+
+    // Last week totals (for "You vs Past Self" comparisons)
+    public decimal LastWeekDistanceKm { get; set; }
+    public int LastWeekRunCount { get; set; }
+    public int LastWeekPoints { get; set; }
+
+    // Current week points
+    public int WeeklyPoints { get; set; }
+
+    // All-time personal bests
+    public decimal BestWeekDistanceKm { get; set; }
 }

@@ -17,6 +17,8 @@ public class User
     public decimal TotalDistanceKm { get; set; }
     public int TotalRuns { get; set; }
     public int StreakFreezeCount { get; set; }
+    // User's self-set weekly distance goal (km). Persisted to DB so it survives device switches.
+    public decimal WeeklyGoalKm { get; set; } = 20.0m;
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;

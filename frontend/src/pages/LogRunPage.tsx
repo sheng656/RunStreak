@@ -1,14 +1,14 @@
-import { useState, type FormEvent } from 'react'
+import { useState, useRef, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import {
   MapPin, Timer, Calendar, FileText, Zap, ArrowLeft,
-  Activity, Upload, X, CheckCircle
+  Activity, Upload, X, CheckCircle, Flame, Trophy
 } from 'lucide-react'
 import runsApi from '../api/runs'
 import { useAuthStore } from '../stores/authStore'
 import usersApi from '../api/users'
 import toast from 'react-hot-toast'
-import type { Badge, ScreenshotImportResponse } from '../types/api'
+import type { Badge, ScreenshotImportResponse, BadgeWithProgress } from '../types/api'
 import { formatPace } from '../utils/formatPace'
 
 // ── Perceived Effort (RPE) configuration ────────────────────────────────────
@@ -152,6 +152,20 @@ export default function LogRunPage() {
       const s = parseInt(form.durationSeconds) || 0
       const totalMinutes = h * 60 + m + s / 60
 
+      // Snapshot stats BEFORE creating the run so we can detect new PBs
+      let prevStats = null
+      let badgesProgress: BadgeWithProgress[] = []
+      if (user) {
+        try {
+          const [statsRes, progressRes] = await Promise.all([
+            usersApi.getStats(user.id),
+            usersApi.getBadgesWithProgress(),
+          ])
+          prevStats = statsRes.data
+          badgesProgress = progressRes.data
+        } catch { /* non-critical — skip PB detection */ }
+      }
+
       const res = await runsApi.create({
         distanceKm: parseFloat(form.distanceKm),
         durationMinutes: totalMinutes,
@@ -159,20 +173,63 @@ export default function LogRunPage() {
         notes: form.notes || undefined,
         perceivedEffort: form.perceivedEffort ?? undefined,
       })
-      // Refresh user profile to update stats
+
+      // Refresh user profile to update streak / points in navbar + dashboard
+      let updatedUser = user
       if (user) {
         try {
           const profileRes = await usersApi.getMe()
           setUser(profileRes.data)
+          updatedUser = profileRes.data
         } catch { /* non-critical */ }
       }
 
       const newBadges: Badge[] = res.data.newlyUnlockedBadges || []
-      toast.success(`Run logged! +${res.data.run.pointsEarned} points`)
+      const run = res.data.run
+      const newDistanceKm = parseFloat(form.distanceKm)
+      const newDuration = totalMinutes
+      const newPace = newDistanceKm > 0 ? newDuration / newDistanceKm : 0
+
+      // Detect new personal bests
+      const isNewPBDistance = prevStats && newDistanceKm > prevStats.longestRunKm
+      const isNewPBPace = prevStats && prevStats.averagePaceMinPerKm > 0 && newPace < prevStats.averagePaceMinPerKm
+
+      // Find closest locked badge
+      const closestBadge = badgesProgress
+        .filter(b => !b.isUnlocked && b.targetThreshold > 0)
+        .sort((a, b) => (b.currentProgress / b.targetThreshold) - (a.currentProgress / a.targetThreshold))[0]
+
+      // Build rich post-run toast message
+      const toastLines: string[] = [`+${run.pointsEarned} points earned! 🎯`]
+      if (updatedUser && updatedUser.currentStreak > 0) {
+        toastLines.push(`🔥 ${updatedUser.currentStreak}-day streak!`)
+      }
+      if (isNewPBDistance) toastLines.push('📏 New longest run PB!')
+      if (isNewPBPace) toastLines.push('⚡ New pace PB!')
+      if (closestBadge && !isNewPBDistance && !isNewPBPace) {
+        const left = Math.max(closestBadge.targetThreshold - closestBadge.currentProgress, 0)
+        if (left > 0 && left < closestBadge.targetThreshold * 0.3) {
+          toastLines.push(`🏅 ${left.toFixed(1)} left to "${closestBadge.name}"`)
+        }
+      }
+
+      toast(
+        (t) => (
+          <div className="flex items-start gap-3" onClick={() => toast.dismiss(t.id)}>
+            <Zap size={20} className="text-amber-400 shrink-0 mt-0.5" />
+            <div>
+              {toastLines.map((line, i) => (
+                <p key={i} className={i === 0 ? 'font-bold text-sm' : 'text-xs text-[hsl(var(--color-text-muted))] mt-0.5'}>{line}</p>
+              ))}
+            </div>
+          </div>
+        ),
+        { duration: 5000, icon: null }
+      )
 
       if (newBadges.length > 0) {
         // Navigate to badge celebration page, passing badge data via router state
-        navigate('/badges/celebration', { state: { badges: newBadges, pointsEarned: res.data.run.pointsEarned } })
+        navigate('/badges/celebration', { state: { badges: newBadges, pointsEarned: run.pointsEarned } })
       } else {
         navigate('/runs')
       }

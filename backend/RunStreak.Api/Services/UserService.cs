@@ -30,6 +30,7 @@ public class UserService(AppDbContext context) : IUserService
             TotalDistanceKm = user.TotalDistanceKm,
             TotalRuns = user.TotalRuns,
             StreakFreezeCount = user.StreakFreezeCount,
+            WeeklyGoalKm = user.WeeklyGoalKm,
             CreatedAt = user.CreatedAt
         };
     }
@@ -58,6 +59,7 @@ public class UserService(AppDbContext context) : IUserService
             TotalDistanceKm = user.TotalDistanceKm,
             TotalRuns = user.TotalRuns,
             StreakFreezeCount = user.StreakFreezeCount,
+            WeeklyGoalKm = user.WeeklyGoalKm,
             CreatedAt = user.CreatedAt
         };
     }
@@ -204,7 +206,7 @@ public class UserService(AppDbContext context) : IUserService
         var runsSummary = await _context.Runs
             .AsNoTracking()
             .Where(r => r.UserId == userId)
-            .Select(r => new { r.DistanceKm, r.DurationMinutes })
+            .Select(r => new { r.DistanceKm, r.DurationMinutes, r.PointsEarned, r.RunDate })
             .ToListAsync();
 
         decimal totalDistance = runsSummary.Sum(r => r.DistanceKm);
@@ -213,6 +215,40 @@ public class UserService(AppDbContext context) : IUserService
 
         decimal averageDistance = user.TotalRuns > 0 ? totalDistance / user.TotalRuns : 0;
         decimal averagePace = totalDistance > 0 ? totalDuration / totalDistance : 0;
+
+        // --- Weekly stats (ISO week: Monday–Sunday) ---
+        // Determine the start of the current week (Monday) and last week
+        var today = DateTime.UtcNow.Date;
+        int daysSinceMonday = ((int)today.DayOfWeek + 6) % 7; // Mon=0 … Sun=6
+        var thisWeekStart = today.AddDays(-daysSinceMonday);
+        var lastWeekStart = thisWeekStart.AddDays(-7);
+        var lastWeekEnd = thisWeekStart.AddDays(-1);
+
+        var thisWeekRuns = runsSummary.Where(r => r.RunDate.Date >= thisWeekStart).ToList();
+        var lastWeekRuns = runsSummary.Where(r => r.RunDate.Date >= lastWeekStart && r.RunDate.Date <= lastWeekEnd).ToList();
+
+        decimal weeklyDistance = thisWeekRuns.Sum(r => r.DistanceKm);
+        int weeklyRunCount = thisWeekRuns.Count;
+        int weeklyPoints = thisWeekRuns.Sum(r => r.PointsEarned);
+
+        decimal lastWeekDistance = lastWeekRuns.Sum(r => r.DistanceKm);
+        int lastWeekRunCount = lastWeekRuns.Count;
+        int lastWeekPoints = lastWeekRuns.Sum(r => r.PointsEarned);
+
+        // Best week ever (group all runs by their ISO-week Monday, take the max weekly distance)
+        decimal bestWeekDistance = 0;
+        if (runsSummary.Count > 0)
+        {
+            bestWeekDistance = runsSummary
+                .GroupBy(r =>
+                {
+                    // Compute ISO week Monday for each run date
+                    int d = ((int)r.RunDate.Date.DayOfWeek + 6) % 7;
+                    return r.RunDate.Date.AddDays(-d);
+                })
+                .Select(g => g.Sum(r => r.DistanceKm))
+                .Max();
+        }
 
         return new UserStatsDto
         {
@@ -223,7 +259,43 @@ public class UserService(AppDbContext context) : IUserService
             AveragePaceMinPerKm = Math.Round(averagePace, 2),
             LongestRunKm = Math.Round(longestRun, 2),
             CurrentStreak = user.CurrentStreak,
-            LongestStreak = user.LongestStreak
+            LongestStreak = user.LongestStreak,
+            WeeklyDistanceKm = Math.Round(weeklyDistance, 2),
+            WeeklyRunCount = weeklyRunCount,
+            WeeklyGoalKm = user.WeeklyGoalKm,
+            WeeklyPoints = weeklyPoints,
+            LastWeekDistanceKm = Math.Round(lastWeekDistance, 2),
+            LastWeekRunCount = lastWeekRunCount,
+            LastWeekPoints = lastWeekPoints,
+            BestWeekDistanceKm = Math.Round(bestWeekDistance, 2),
+        };
+    }
+
+    public async Task<UserProfileDto?> UpdateWeeklyGoalAsync(Guid userId, decimal goalKm)
+    {
+        var user = await _context.Users.FindAsync(userId);
+        if (user == null) return null;
+
+        // Clamp goal to a sensible range (1–500 km/week)
+        user.WeeklyGoalKm = Math.Clamp(goalKm, 1m, 500m);
+        user.UpdatedAt = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
+
+        return new UserProfileDto
+        {
+            Id = user.Id,
+            Username = user.Username,
+            Email = user.Email,
+            DisplayName = user.DisplayName,
+            AvatarUrl = user.AvatarUrl,
+            TotalPoints = user.TotalPoints,
+            CurrentStreak = user.CurrentStreak,
+            LongestStreak = user.LongestStreak,
+            TotalDistanceKm = user.TotalDistanceKm,
+            TotalRuns = user.TotalRuns,
+            StreakFreezeCount = user.StreakFreezeCount,
+            WeeklyGoalKm = user.WeeklyGoalKm,
+            CreatedAt = user.CreatedAt
         };
     }
 }

@@ -9,4 +9,5 @@ public interface IUserService
     Task<List<UserBadgeDto>> GetUserBadgesAsync(Guid userId);
     Task<List<BadgeWithProgressDto>> GetBadgesWithProgressAsync(Guid userId);
     Task<UserStatsDto?> GetUserStatsAsync(Guid userId);
+    Task<UserProfileDto?> UpdateWeeklyGoalAsync(Guid userId, decimal goalKm);
 }

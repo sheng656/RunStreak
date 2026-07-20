@@ -35,6 +35,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             entity.Property(u => u.DisplayName).HasMaxLength(100).IsRequired();
             entity.Property(u => u.AvatarUrl).HasMaxLength(512);
             entity.Property(u => u.TotalDistanceKm).HasPrecision(10, 2);
+            entity.Property(u => u.WeeklyGoalKm).HasPrecision(6, 2).HasDefaultValue(20.0m);
         });
 
         // ── Runs ────────────────────────────────────────────────────────────

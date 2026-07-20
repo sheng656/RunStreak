@@ -12,8 +12,12 @@ import streakFreezeApi from '../api/streakFreeze'
 import StatCard from '../components/ui/StatCard'
 import EmptyState from '../components/ui/EmptyState'
 import LoadingSpinner from '../components/ui/LoadingSpinner'
+import WeeklyCalendar from '../components/ui/WeeklyCalendar'
+import WeeklyProgress from '../components/ui/WeeklyProgress'
+import MotivationalInsight from '../components/ui/MotivationalInsight'
+import PersonalRecords from '../components/ui/PersonalRecords'
 import toast from 'react-hot-toast'
-import type { Run, UserBadge } from '../types/api'
+import type { Run, UserBadge, UserStats, BadgeWithProgress } from '../types/api'
 
 export default function DashboardPage() {
   const { user, setUser } = useAuthStore()
@@ -21,6 +25,8 @@ export default function DashboardPage() {
 
   const [recentRuns, setRecentRuns] = useState<Run[]>([])
   const [recentBadges, setRecentBadges] = useState<UserBadge[]>([])
+  const [stats, setStats] = useState<UserStats | null>(null)
+  const [badgesWithProgress, setBadgesWithProgress] = useState<BadgeWithProgress[]>([])
   const [loading, setLoading] = useState(true)
   const [purchasing, setPurchasing] = useState(false)
 
@@ -49,12 +55,16 @@ export default function DashboardPage() {
     async function loadDashboard() {
       if (!user) return
       try {
-        const [runsRes, badgesRes] = await Promise.all([
-          runsApi.list(1, 5),
+        const [runsRes, badgesRes, statsRes, progressRes] = await Promise.all([
+          runsApi.list(1, 7),  // fetch 7 most recent so we have a week's worth for calendar
           usersApi.getBadges(user.id),
+          usersApi.getStats(user.id),
+          usersApi.getBadgesWithProgress(),
         ])
         setRecentRuns(runsRes.data.runs)
         setRecentBadges(badgesRes.data.slice(0, 5))
+        setStats(statsRes.data)
+        setBadgesWithProgress(progressRes.data)
         setUserStats({
           totalPoints: user.totalPoints,
           currentStreak: user.currentStreak,
@@ -82,8 +92,21 @@ export default function DashboardPage() {
 
   const streakActive = user.currentStreak > 0
 
+  // Find the closest locked badge the user is nearest to unlocking (by percentage)
+  const closestBadge = badgesWithProgress
+    .filter(b => !b.isUnlocked && b.targetThreshold > 0)
+    .sort((a, b) => (b.currentProgress / b.targetThreshold) - (a.currentProgress / a.targetThreshold))[0]
+
+  const closestBadgeKmLeft =
+    closestBadge && (closestBadge.category === 'distance' || closestBadge.category === 'milestone')
+      ? Math.max(closestBadge.targetThreshold - closestBadge.currentProgress, 0)
+      : undefined
+
+  // Current week's run dates for the calendar (YYYY-MM-DD)
+  const thisWeekRunDates = recentRuns.map(r => r.runDate)
+
   return (
-    <div className="page-container space-y-6">
+    <div className="page-container space-y-4">
       {/* Welcome + streak hero */}
       <div className="card p-6 sm:p-8 overflow-hidden relative animate-fade-in-up">
         {/* Decorative gradient background */}
@@ -101,11 +124,25 @@ export default function DashboardPage() {
               <h1 className="text-xl sm:text-2xl font-bold text-[hsl(var(--color-text))]">
                 Hey, {user.displayName || user.username}! 👋
               </h1>
-              <p className="text-sm text-[hsl(var(--color-text-muted))] mt-1">
-                {streakActive
-                  ? "Keep the fire burning — don't break your streak!"
-                  : 'Start a streak today by logging a run.'}
-              </p>
+              {/* Dynamic motivational insight replaces static subtitle */}
+              <div className="mt-2">
+                {stats ? (
+                  <MotivationalInsight
+                    user={user}
+                    recentRuns={recentRuns}
+                    weeklyDistanceKm={stats.weeklyDistanceKm}
+                    weeklyGoalKm={stats.weeklyGoalKm}
+                    closestBadgeName={closestBadge?.name}
+                    closestBadgeKmLeft={closestBadgeKmLeft}
+                  />
+                ) : (
+                  <p className="text-sm text-[hsl(var(--color-text-muted))] mt-1">
+                    {streakActive
+                      ? "Keep the fire burning — don't break your streak!"
+                      : 'Start a streak today by logging a run.'}
+                  </p>
+                )}
+              </div>
             </div>
             <Link to="/runs/new" className="btn btn-fire btn-lg shrink-0">
               <Plus size={18} />
@@ -181,6 +218,25 @@ export default function DashboardPage() {
         </div>
       </div>
 
+      {/* Weekly Calendar — "Don't break the chain" */}
+      <div className="card p-4">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-sm font-semibold text-[hsl(var(--color-text))]">This Week</h2>
+          <span className="text-xs text-[hsl(var(--color-text-muted))]">Mon – Sun</span>
+        </div>
+        <WeeklyCalendar runDates={thisWeekRunDates} />
+      </div>
+
+      {/* Weekly Progress bar */}
+      {stats && (
+        <WeeklyProgress
+          weeklyDistanceKm={stats.weeklyDistanceKm}
+          weeklyRunCount={stats.weeklyRunCount}
+          weeklyGoalKm={stats.weeklyGoalKm}
+          weeklyPoints={stats.weeklyPoints}
+        />
+      )}
+
       {/* Stats grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <StatCard
@@ -209,6 +265,9 @@ export default function DashboardPage() {
         />
       </div>
 
+      {/* Personal Records */}
+      {stats && <PersonalRecords stats={stats} />}
+
       {/* Two-column layout: Recent Runs + Badges */}
       <div className="grid lg:grid-cols-3 gap-4">
         {/* Recent Runs — 2/3 width */}
@@ -232,7 +291,7 @@ export default function DashboardPage() {
             />
           ) : (
             <div className="divide-y divide-[hsl(var(--color-border))]">
-              {recentRuns.map((run, i) => (
+              {recentRuns.slice(0, 5).map((run, i) => (
                 <div
                   key={run.id}
                   className={`flex items-center gap-4 px-4 py-3 hover:bg-[hsl(var(--color-surface-2))] transition-colors animate-fade-in-up stagger-${i + 1}`}

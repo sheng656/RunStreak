@@ -16,6 +16,9 @@ const usersApi = {
 
   getStats: (userId: string) =>
     apiClient.get<UserStats>(`/users/${userId}/stats`),
+
+  updateWeeklyGoal: (goalKm: number) =>
+    apiClient.put<UserProfile>('/users/me/weekly-goal', { goalKm }),
 }
 
 export default usersApi

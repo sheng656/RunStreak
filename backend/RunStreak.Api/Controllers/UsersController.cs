@@ -88,6 +88,29 @@ public class UsersController(IUserService userService) : ControllerBase
         return Ok(stats);
     }
 
+    [HttpPut("me/weekly-goal")]
+    public async Task<IActionResult> UpdateWeeklyGoal([FromBody] UpdateWeeklyGoalRequest request)
+    {
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
+
+        var userId = GetUserId();
+        if (userId == Guid.Empty)
+        {
+            return Unauthorized();
+        }
+
+        var profile = await _userService.UpdateWeeklyGoalAsync(userId, request.GoalKm);
+        if (profile == null)
+        {
+            return NotFound(new { message = "User not found." });
+        }
+
+        return Ok(profile);
+    }
+
     private Guid GetUserId()
     {
         var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;

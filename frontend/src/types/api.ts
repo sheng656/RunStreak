@@ -13,6 +13,7 @@ export interface UserProfile {
   totalDistanceKm: number
   totalRuns: number
   streakFreezeCount: number
+  weeklyGoalKm: number
   createdAt: string
 }
 
@@ -98,6 +99,15 @@ export interface UserStats {
   longestRunKm: number
   currentStreak: number
   longestStreak: number
+  // Weekly stats
+  weeklyDistanceKm: number
+  weeklyRunCount: number
+  weeklyGoalKm: number
+  weeklyPoints: number
+  lastWeekDistanceKm: number
+  lastWeekRunCount: number
+  lastWeekPoints: number
+  bestWeekDistanceKm: number
 }
 
 // Backend runs list response shape: { runs, totalCount, page, pageSize }
