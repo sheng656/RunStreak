@@ -1,8 +1,8 @@
 # RunStreak — Project Plan (LIVE)
 
-> **Last updated:** 2026-07-07
-> **Current focus:** Phase 10 — Submission Preparation (UX fixes + Streak Freeze + Rolling Leaderboard complete)
-> **Overall status:** ✅ Phase 0-8 complete, Phase 10 in progress
+> **Last updated:** 2026-07-21
+> **Current focus:** Phase 11 — Solo Runner Self-Motivation UX (all 6 components complete; migration applied)
+> **Overall status:** ✅ Phase 0-8 complete, Phase 10-11 in progress
 
 This file is the single source of truth for what's done, what's in progress, and what's next. Agents must read it at the start of every session and update it at the end.
 
@@ -314,6 +314,43 @@ This file is the single source of truth for what's done, what's in progress, and
 - [ ] Group challenges: create a challenge, invite users, track collective distance
 - [ ] Challenge leaderboard within a group
 - [ ] This is the lowest priority stretch goal
+
+---
+
+## Phase 11 — Solo Runner Self-Motivation UX
+
+**Goal:** Make RunStreak compelling for solo users with no competitors on the leaderboard.
+See ADR: `specs/decisions/011-solo-motivation-ux.md`.
+
+### 11A — Backend (minimal additions)
+
+- [x] Add `WeeklyGoalKm` (decimal, default 20.0) to `User.cs`
+- [x] Extend `UserStatsDto` with weekly stats: `WeeklyDistanceKm`, `WeeklyRunCount`, `WeeklyGoalKm`, `WeeklyPoints`, `LastWeekDistanceKm`, `LastWeekRunCount`, `LastWeekPoints`, `BestWeekDistanceKm`
+- [x] Extend `UserProfileDto` with `WeeklyGoalKm`
+- [x] Implement `GetUserStatsAsync` — ISO-week grouping + best-week-ever calculation
+- [x] Add `UpdateWeeklyGoalAsync` to `IUserService` + `UserService`
+- [x] Add `PUT /api/users/me/weekly-goal` to `UsersController`
+- [x] Create `UpdateWeeklyGoalRequest` DTO (validation: 1–500 km)
+- [x] EF migration: `AddWeeklyGoalKm`
+- [x] Apply migration to Azure SQL
+
+### 11B — Frontend Types & API
+
+- [x] Update `api.ts` — `UserStats` and `UserProfile` types extended
+- [x] Update `users.ts` — add `updateWeeklyGoal(goalKm)` API call
+
+### 11C — New UI Components
+
+- [x] `WeeklyCalendar.tsx` — Mon–Sun activity strip; filled circles for run days, freeze-shield icon for freeze days, ring for today
+- [x] `MotivationalInsight.tsx` — priority-ordered rule engine; 6 contextual message types
+- [x] `PersonalRecords.tsx` — Longest Run / Best Pace / Best Week card with trophy icons and glow effects
+- [x] `WeeklyProgress.tsx` — animated gradient progress bar; celebration state on goal achieved; inline goal editor
+
+### 11D — Page Modifications
+
+- [x] `DashboardPage.tsx` — integrated all 4 new components above the stats grid
+- [x] `LeaderboardPage.tsx` — added "You vs Your Past Self" section (always visible, not just solo)
+- [x] `LogRunPage.tsx` — added pre-run stats snapshot; rich multi-line post-run toast (points + streak + PB flags + badge proximity)
 
 ---
 
