@@ -184,14 +184,16 @@ export default function LogRunPage() {
         } catch { /* non-critical */ }
       }
 
-      const newBadges: Badge[] = res.data.newlyUnlockedBadges || []
-      const run = res.data.run
+      const newBadges: Badge[] = res.data?.newlyUnlockedBadges || res.data?.NewlyUnlockedBadges || []
+      const runData = res.data?.run || res.data?.Run || res.data
+      const pointsEarned = runData?.pointsEarned ?? runData?.PointsEarned ?? 0
+
       const newDistanceKm = parseFloat(form.distanceKm)
       const newDuration = totalMinutes
       const newPace = newDistanceKm > 0 ? newDuration / newDistanceKm : 0
 
       // Detect new personal bests
-      const isNewPBDistance = prevStats && newDistanceKm > prevStats.longestRunKm
+      const isNewPBDistance = prevStats && prevStats.longestRunKm !== undefined && newDistanceKm > prevStats.longestRunKm
       const isNewPBPace = prevStats && prevStats.averagePaceMinPerKm > 0 && newPace < prevStats.averagePaceMinPerKm
 
       // Find closest locked badge
@@ -200,7 +202,7 @@ export default function LogRunPage() {
         .sort((a, b) => (b.currentProgress / b.targetThreshold) - (a.currentProgress / a.targetThreshold))[0]
 
       // Build rich post-run toast message
-      const toastLines: string[] = [`+${run.pointsEarned} points earned! 🎯`]
+      const toastLines: string[] = [`+${pointsEarned} points earned! 🎯`]
       if (updatedUser && updatedUser.currentStreak > 0) {
         toastLines.push(`🔥 ${updatedUser.currentStreak}-day streak!`)
       }
@@ -229,7 +231,7 @@ export default function LogRunPage() {
 
       if (newBadges.length > 0) {
         // Navigate to badge celebration page, passing badge data via router state
-        navigate('/badges/celebration', { state: { badges: newBadges, pointsEarned: run.pointsEarned } })
+        navigate('/badges/celebration', { state: { badges: newBadges, pointsEarned } })
       } else {
         navigate('/runs')
       }

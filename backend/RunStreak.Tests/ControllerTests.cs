@@ -142,6 +142,43 @@ public class ControllerTests : IClassFixture<WebApplicationFactory<Program>>
     }
 
     [Fact]
+    public async Task LogRun_ShouldReturnCreated_WhenRequestIsValid()
+    {
+        // Arrange
+        var userId = Guid.NewGuid();
+        var token = GenerateTestJwtToken(userId, "runner1");
+        var client = _factory.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        await SeedDatabaseAsync(async context =>
+        {
+            context.Users.Add(new User
+            {
+                Id = userId,
+                Username = "runner1",
+                Email = "runner1@example.com"
+            });
+            await context.SaveChangesAsync();
+        });
+
+        var request = new LogRunRequest
+        {
+            DistanceKm = 5.0m,
+            DurationMinutes = 25m,
+            RunDate = DateTime.UtcNow
+        };
+
+        // Act
+        var response = await client.PostAsJsonAsync("/api/runs", request);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        var json = await response.Content.ReadAsStringAsync();
+        Assert.Contains("pointsEarned", json);
+        Assert.Contains("run", json);
+    }
+
+    [Fact]
     public async Task GetLeaderboard_ShouldReturnEntries_WhenRequestIsValid()
     {
         // Arrange
