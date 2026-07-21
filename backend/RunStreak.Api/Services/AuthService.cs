@@ -281,6 +281,7 @@ public class AuthService : IAuthService
             TotalDistanceKm = user.TotalDistanceKm,
             TotalRuns = user.TotalRuns,
             StreakFreezeCount = user.StreakFreezeCount,
+            WeeklyGoalKm = user.WeeklyGoalKm,
             CreatedAt = user.CreatedAt
         };
     }

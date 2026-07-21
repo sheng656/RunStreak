@@ -136,20 +136,7 @@ export interface AuthResponse {
   // Refresh token returned in the response body; stored in localStorage by the client
   // for session persistence across page reloads.
   refreshToken: string
-  user: {
-    id: string
-    username: string
-    email: string
-    displayName: string
-    avatarUrl: string | null
-    totalPoints: number
-    currentStreak: number
-    longestStreak: number
-    totalDistanceKm: number
-    totalRuns: number
-    streakFreezeCount: number
-    createdAt: string
-  }
+  user: UserProfile
 }
 
 // Run DTOs

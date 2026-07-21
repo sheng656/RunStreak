@@ -14,6 +14,7 @@ const mockUser: UserProfile = {
   totalDistanceKm: 25.5,
   totalRuns: 6,
   streakFreezeCount: 0,
+  weeklyGoalKm: 25,
   createdAt: new Date().toISOString(),
 }
 

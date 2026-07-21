@@ -1,8 +1,8 @@
-import { useState, useRef, type FormEvent } from 'react'
+import { useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import {
   MapPin, Timer, Calendar, FileText, Zap, ArrowLeft,
-  Activity, Upload, X, CheckCircle, Flame, Trophy
+  Activity, Upload, X, CheckCircle
 } from 'lucide-react'
 import runsApi from '../api/runs'
 import { useAuthStore } from '../stores/authStore'
@@ -184,9 +184,9 @@ export default function LogRunPage() {
         } catch { /* non-critical */ }
       }
 
-      const newBadges: Badge[] = res.data?.newlyUnlockedBadges || res.data?.NewlyUnlockedBadges || []
-      const runData = res.data?.run || res.data?.Run || res.data
-      const pointsEarned = runData?.pointsEarned ?? runData?.PointsEarned ?? 0
+      const newBadges: Badge[] = res.data?.newlyUnlockedBadges || []
+      const runData = res.data?.run
+      const pointsEarned = runData?.pointsEarned ?? 0
 
       const newDistanceKm = parseFloat(form.distanceKm)
       const newDuration = totalMinutes

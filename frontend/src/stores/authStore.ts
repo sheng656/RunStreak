@@ -1,21 +1,9 @@
 import { create } from 'zustand'
 import { clearStoredRefreshToken } from '../api/client'
 
-// ── Types ──────────────────────────────────────────────────────────────────
-export interface UserProfile {
-  id: string
-  username: string
-  email: string
-  displayName: string
-  avatarUrl: string | null
-  totalPoints: number
-  currentStreak: number
-  longestStreak: number
-  totalDistanceKm: number
-  totalRuns: number
-  streakFreezeCount: number
-  createdAt: string
-}
+import type { UserProfile } from '../types/api'
+
+export type { UserProfile }
 
 interface AuthState {
   // The access token lives ONLY in this Zustand store — never in

@@ -13,5 +13,6 @@ public class UserDto
     public decimal TotalDistanceKm { get; set; }
     public int TotalRuns { get; set; }
     public int StreakFreezeCount { get; set; }
+    public decimal WeeklyGoalKm { get; set; }
     public DateTime CreatedAt { get; set; }
 }
