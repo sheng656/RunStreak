@@ -18,33 +18,22 @@ public class LeaderboardService(AppDbContext context) : ILeaderboardService
         {
             var cutoffDate = DateTime.UtcNow.AddDays(-6).Date;
 
-            var weeklyPointsQuery = _context.Runs
+            var weeklyUsers = await _context.Users
                 .AsNoTracking()
-                .Where(r => r.RunDate >= cutoffDate)
-                .GroupBy(r => r.UserId)
-                .Select(g => new
+                .Select(u => new
                 {
-                    UserId = g.Key,
-                    WeeklyPoints = g.Sum(r => r.PointsEarned)
-                });
-
-            var leaderboardQuery = from u in _context.Users.AsNoTracking()
-                                   join wp in weeklyPointsQuery on u.Id equals wp.UserId into joined
-                                   from subwp in joined.DefaultIfEmpty()
-                                   select new
-                                   {
-                                       u.Id,
-                                       u.Username,
-                                       u.DisplayName,
-                                       u.AvatarUrl,
-                                       TotalPoints = subwp != null ? subwp.WeeklyPoints : 0,
-                                       u.CurrentStreak,
-                                       u.LongestStreak,
-                                       u.TotalDistanceKm,
-                                       u.TotalRuns
-                                   };
-
-            var weeklyUsers = await leaderboardQuery
+                    u.Id,
+                    u.Username,
+                    u.DisplayName,
+                    u.AvatarUrl,
+                    TotalPoints = u.Runs
+                        .Where(r => r.RunDate >= cutoffDate)
+                        .Sum(r => (int?)r.PointsEarned) ?? 0,
+                    u.CurrentStreak,
+                    u.LongestStreak,
+                    u.TotalDistanceKm,
+                    u.TotalRuns
+                })
                 .OrderByDescending(x => x.TotalPoints)
                 .ThenByDescending(x => x.CurrentStreak)
                 .ThenBy(x => x.DisplayName)
