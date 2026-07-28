@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Flame, Mail, Lock, Eye, EyeOff } from 'lucide-react'
+import { Flame, Mail, Lock, Eye, EyeOff, Sparkles } from 'lucide-react'
 import { useAuthStore } from '../stores/authStore'
 import authApi from '../api/auth'
 import { setStoredRefreshToken } from '../api/client'
@@ -40,7 +40,7 @@ export default function LoginPage() {
     } catch (err: unknown) {
       const msg =
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
-        'Login failed. Please check your credentials.'
+        'Invalid email/username or password.'
       toast.error(msg)
     } finally {
       setSubmitting(false)
@@ -59,6 +59,26 @@ export default function LoginPage() {
           <p className="text-sm text-[hsl(var(--color-text-muted))] mt-1">
             Sign in to continue your streak
           </p>
+        </div>
+
+        {/* MSA Marker Quick Fill Banner */}
+        <div className="card p-3.5 mb-4 bg-blue-500/10 border border-blue-500/20 text-xs space-y-2">
+          <div className="flex items-center justify-between font-bold text-blue-400">
+            <span className="flex items-center gap-1.5">
+              <Sparkles size={14} /> MSA Marker Demo Login
+            </span>
+            <button
+              type="button"
+              onClick={() => { setEmail('testuser'); setPassword('Test1234!'); setErrors({}); }}
+              className="px-2 py-0.5 rounded bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 font-semibold transition-colors cursor-pointer"
+            >
+              Auto-fill
+            </button>
+          </div>
+          <div className="text-[hsl(var(--color-text-muted))] space-y-0.5 font-mono text-[11px]">
+            <div>Username: <strong className="text-[hsl(var(--color-text))]">testuser</strong> (or test@runstreak.app)</div>
+            <div>Password: <strong className="text-[hsl(var(--color-text))]">Test1234!</strong></div>
+          </div>
         </div>
 
         {/* Login form */}

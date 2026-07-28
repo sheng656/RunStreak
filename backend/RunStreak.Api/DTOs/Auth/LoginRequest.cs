@@ -4,8 +4,7 @@ namespace RunStreak.Api.DTOs.Auth;
 
 public class LoginRequest
 {
-    [Required(ErrorMessage = "Email is required.")]
-    [EmailAddress(ErrorMessage = "Invalid email address format.")]
+    [Required(ErrorMessage = "Email or Username is required.")]
     public string Email { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "Password is required.")]

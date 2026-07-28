@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
   Flame, Trophy, MapPin, TrendingUp, Plus,
-  Medal, Zap, CalendarDays, Shield, Info, X, AlertCircle,
+  Medal, Zap, CalendarDays, Shield, X, AlertCircle,
 } from 'lucide-react'
 import { useAuthStore } from '../stores/authStore'
 import { useGamificationStore } from '../stores/gamificationStore'
