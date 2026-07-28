@@ -381,7 +381,7 @@ See ADR: `specs/decisions/011-solo-motivation-ux.md`.
   - [x] Route Challenge Mode (`Challenge`, `UserChallenge`, `/challenges` page, active widget)
   - [x] Classic New Zealand & Auckland Hiking Trails expansion (16 total challenges, including Rangitoto Summit, Auckland Coast to Coast, Waitākere Ranges, Milford Track, Routeburn, Abel Tasman, Kepler Track, and Te Araroa Trail) with themed Noto SVG icon rendering on cards and widgets
   - [x] Mock data seeding & rolling-window auto-refresh (20 users, 2-43km range, clear old test user, enriched `testuser` account, auto-refreshed relative to `DateTime.UtcNow.Date` on cold start via EF Core `ExecuteDeleteAsync` + `SemaphoreSlim` lock)
-  - [x] Editable running logs on Run History page (`EditRunModal.tsx` reusing `LogRunPage` inputs, RPE effort picker, live pace calculation, and backend `PUT /api/runs/{id}` endpoint)
+  - [x] Rest day ticket advance purchase constraint & confirmation modal (`StreakService.cs` advance purchase check, hover tooltips, and `DashboardPage.tsx` confirmation modal)
   - [x] Scalar API documentation content & route completeness audit
 - [x] Final deployment verification & tests (36/36 backend tests pass, 18/18 frontend tests pass)
 

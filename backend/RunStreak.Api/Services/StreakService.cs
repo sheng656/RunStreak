@@ -45,17 +45,29 @@ public class StreakService(AppDbContext context) : IStreakService
         }
 
         int newlyAppliedCount = 0;
+        var user = await _context.Users.FindAsync(userId);
 
         // Function to check if an advance-purchased ticket was available on or before candidate freeze date
         bool CanCoverRestDay(DateTime freezeDate)
         {
-            int totalEarnedUpToDate = earnedFreezes.Count(sf => sf.Date.Date <= freezeDate.Date);
-            int totalUsedUpToDate = usedFreezeDates.Count(d => d <= freezeDate.Date) + newlyAppliedCount;
-            return (totalEarnedUpToDate - totalUsedUpToDate) > 0;
+            var todayLocal = DateTime.UtcNow.Date;
+
+            // If freezeDate is today or in the future, any banked ticket covers it
+            if (freezeDate.Date >= todayLocal)
+            {
+                return true;
+            }
+
+            // For past days (freezeDate < todayLocal):
+            // Only freezes earned on or before freezeDate (plus initial banked count) can cover it
+            int earnedUpToDate = earnedFreezes.Count(sf => sf.Date.Date <= freezeDate.Date);
+            int initialBanked = Math.Max(0, (user?.StreakFreezeCount ?? 0) + usedFreezeDates.Count - earnedFreezes.Count);
+            int availableUpToDate = earnedUpToDate + initialBanked - usedFreezeDates.Count(d => d <= freezeDate.Date) - newlyAppliedCount;
+
+            return availableUpToDate > 0;
         }
 
         // 3. Scan for gaps of exactly 1 day and auto-apply freezes if available
-        var user = await _context.Users.FindAsync(userId);
         if (user != null && user.StreakFreezeCount > 0)
         {
             var todayLocal = DateTime.UtcNow.AddHours(14).Date; // max timezone NZ/Kiribati

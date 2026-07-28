@@ -207,10 +207,10 @@ export default function DashboardPage() {
               </div>
               <button
                 type="button"
-                onClick={handlePurchaseFreeze}
+                onClick={() => setShowPurchaseConfirm(true)}
                 disabled={purchasing || user.streakFreezeCount >= 5 || user.totalPoints < 256}
                 className="btn btn-secondary btn-sm flex items-center gap-1.5 shadow-sm text-xs py-1.5 border-[hsl(var(--color-border))] bg-[hsl(var(--color-surface-2))] hover:bg-[hsl(var(--color-border))] disabled:opacity-50"
-                title="Use 256 points to purchase a rest day ticket to protect your streak."
+                title="Rest day tickets must be purchased in advance before taking a rest day. They cannot be applied retroactively to past missed days."
               >
                 {purchasing ? (
                   <div className="w-3.5 h-3.5 border-2 border-[hsl(var(--color-text-muted))]/30 border-t-[hsl(var(--color-text))] rounded-full animate-spin" />
@@ -230,7 +230,6 @@ export default function DashboardPage() {
       <ActiveChallengeWidget />
 
       {/* Weekly Calendar — "Don't break the chain" */}
-
       <div className="card p-4">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-sm font-semibold text-[hsl(var(--color-text))]">This Week</h2>
@@ -372,6 +371,94 @@ export default function DashboardPage() {
           )}
         </div>
       </div>
+
+      {/* Rest Day Ticket Purchase Confirmation Modal */}
+      {showPurchaseConfirm && (
+        <div className="fixed inset-0 z-50 bg-[hsl(var(--color-overlay))] backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+          <div className="card max-w-md w-full p-6 space-y-5 shadow-2xl border border-[hsl(var(--color-border))] bg-[hsl(var(--color-surface))] animate-fade-in-up relative">
+            <button
+              type="button"
+              onClick={() => setShowPurchaseConfirm(false)}
+              className="absolute top-4 right-4 text-[hsl(var(--color-text-muted))] hover:text-[hsl(var(--color-text))] p-1 rounded-lg transition-colors"
+            >
+              <X size={18} />
+            </button>
+
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-blue-500/10 text-blue-400 flex items-center justify-center shrink-0 border border-blue-500/20 shadow-sm">
+                <Shield size={24} />
+              </div>
+              <div className="space-y-1">
+                <h3 className="text-lg font-bold text-[hsl(var(--color-text))]">Purchase Rest Day Ticket</h3>
+                <p className="text-xs text-[hsl(var(--color-text-muted))] leading-relaxed">
+                  Bank a ticket to protect your running streak when taking a planned rest day.
+                </p>
+              </div>
+            </div>
+
+            {/* Advance Purchase Rules Highlight */}
+            <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/20 space-y-2 text-xs">
+              <div className="flex items-center gap-1.5 font-bold text-amber-500">
+                <AlertCircle size={14} />
+                <span>Important Ticket Rules:</span>
+              </div>
+              <ul className="space-y-1.5 text-[hsl(var(--color-text-secondary))] pl-5 list-disc text-[11px] leading-relaxed">
+                <li><strong className="text-[hsl(var(--color-text))]">Must be purchased in advance:</strong> Tickets cover today or future rest days.</li>
+                <li><strong className="text-[hsl(var(--color-text))]">No retroactive coverage:</strong> Tickets cannot be applied to past rest days after a streak has broken.</li>
+                <li><strong className="text-[hsl(var(--color-text))]">Maximum cap:</strong> You can hold up to 5 banked tickets at a time.</li>
+              </ul>
+            </div>
+
+            {/* Impact Details Box */}
+            <div className="p-3.5 rounded-xl bg-[hsl(var(--color-surface-2))]/70 border border-[hsl(var(--color-border))]/50 space-y-2 text-xs">
+              <div className="flex items-center justify-between">
+                <span className="text-[hsl(var(--color-text-muted))]">Cost:</span>
+                <span className="font-bold text-amber-500 flex items-center gap-1">
+                  <Zap size={12} /> 256 Points
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-[hsl(var(--color-text-muted))]">Your Current Balance:</span>
+                <span className="font-semibold text-[hsl(var(--color-text))]">{user.totalPoints} pts</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-[hsl(var(--color-text-muted))]">Balance After Purchase:</span>
+                <span className="font-bold text-[hsl(var(--color-brand))]">{user.totalPoints - 256} pts</span>
+              </div>
+              <div className="flex items-center justify-between pt-1 border-t border-[hsl(var(--color-border))]/40">
+                <span className="text-[hsl(var(--color-text-muted))]">Banked Tickets:</span>
+                <span className="font-semibold text-[hsl(var(--color-text))]">{user.streakFreezeCount} ➔ <strong className="text-blue-400">{user.streakFreezeCount + 1} / 5</strong></span>
+              </div>
+            </div>
+
+            <div className="pt-2 flex items-center justify-end gap-3 border-t border-[hsl(var(--color-border))]/40">
+              <button
+                type="button"
+                onClick={() => setShowPurchaseConfirm(false)}
+                disabled={purchasing}
+                className="btn btn-secondary text-xs px-4"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={confirmPurchaseFreeze}
+                disabled={purchasing}
+                className="btn btn-primary text-xs px-4 flex items-center gap-1.5"
+              >
+                {purchasing ? (
+                  <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <>
+                    <Shield size={14} />
+                    Confirm Purchase (256 pts)
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
