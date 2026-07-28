@@ -416,6 +416,21 @@ public static class DbSeeder
     public static async Task SeedChallengesAsync(AppDbContext context)
     {
         var currentCount = await context.Challenges.CountAsync();
+
+        // Fix broken icon URL if present in existing database
+        var brokenChallenges = await context.Challenges
+            .Where(c => c.IconUrl.Contains("flag-new-zealand.svg"))
+            .ToListAsync();
+
+        if (brokenChallenges.Count > 0)
+        {
+            foreach (var c in brokenChallenges)
+            {
+                c.IconUrl = "https://api.iconify.design/circle-flags/nz.svg";
+            }
+            await context.SaveChangesAsync();
+        }
+
         if (currentCount == ExpectedChallengeCount)
         {
             return; // Already seeded with the correct set
@@ -553,7 +568,7 @@ public static class DbSeeder
                 Name = "Tour de New Zealand",
                 Description = "A monumental 300km journey across the North and South islands.",
                 TargetDistanceKm = 300.0m,
-                IconUrl = "https://api.iconify.design/noto/flag-new-zealand.svg",
+                IconUrl = "https://api.iconify.design/circle-flags/nz.svg",
                 Rarity = "legendary",
                 SortOrder = 14
             },
