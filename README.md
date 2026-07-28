@@ -39,7 +39,7 @@ The goal is to take an activity people often struggle to stick with (running con
 | **Profile** | Sheng (Test Runner) |
 | **Pre-populated Data** | 42 logged runs (~300 km total), 14-day active streak, 18-day longest streak, active Route Challenge (*Tour de New Zealand*), 3 Rest Day Tickets remaining, multiple unlocked badges across rarity tiers |
 
-> *Note: This is a pre-seeded demonstration account with rich historical activity so markers can evaluate the full gamification experience immediately.*
+> *Note: Demo accounts (including `testuser`) automatically refresh their activity relative to the current date on every cold start, ensuring continuous streak and leaderboard demonstrations. Real user accounts created via registration are never affected.*
 
 ## What makes this project stand out
 

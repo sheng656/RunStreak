@@ -156,6 +156,9 @@ app.MapControllers();
 app.MapGet("/api/health", () => Results.Ok(new { status = "healthy", timestamp = DateTime.UtcNow }))
     .AllowAnonymous();
 
+// Concurrency lock to ensure startup seed runs only once even if multiple requests trigger cold start simultaneously
+SemaphoreSlim seedLock = new(1, 1);
+
 // Apply migrations and seed database on startup
 using (var scope = app.Services.CreateScope())
 {
@@ -164,14 +167,22 @@ using (var scope = app.Services.CreateScope())
     {
         var dbContext = services.GetRequiredService<AppDbContext>();
         var hasher = services.GetRequiredService<IPasswordHasher<User>>();
+        var badgeService = services.GetRequiredService<IBadgeService>();
         
         // Ensure pending migrations are applied to Azure SQL / local database
         await dbContext.Database.MigrateAsync();
         
-        await DbSeeder.SeedBadgesAsync(dbContext);
-        await DbSeeder.SeedChallengesAsync(dbContext);
-        await DbSeeder.SeedDemoDataAsync(dbContext, hasher);
-
+        await seedLock.WaitAsync();
+        try
+        {
+            await DbSeeder.SeedBadgesAsync(dbContext);
+            await DbSeeder.SeedChallengesAsync(dbContext);
+            await DbSeeder.SeedDemoDataAsync(dbContext, hasher, badgeService);
+        }
+        finally
+        {
+            seedLock.Release();
+        }
     }
     catch (Exception ex)
     {

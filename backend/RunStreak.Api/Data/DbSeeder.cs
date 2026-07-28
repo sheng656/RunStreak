@@ -1,4 +1,5 @@
 using RunStreak.Api.Models;
+using RunStreak.Api.Services;
 using Microsoft.EntityFrameworkCore;
 
 namespace RunStreak.Api.Data;
@@ -580,29 +581,44 @@ public static class DbSeeder
         await context.SaveChangesAsync();
     }
 
-    public static async Task SeedDemoDataAsync(AppDbContext context, Microsoft.AspNetCore.Identity.IPasswordHasher<User> passwordHasher)
+    // Known demo usernames — only these get refreshed, never real user accounts created via registration.
+    private static readonly HashSet<string> DemoUsernames = new(
+    [
+        "sarah_j", "mike_c", "aarav_p", "elena_r", "david_k",
+        "jess_t", "liam_o", "amara_o", "hiroshi_t", "chloe_d",
+        "carlos_m", "zoe_v", "kai_t", "maya_s", "lucas_s",
+        "hannah_s", "ethan_b", "freja_l", "tariq_a", "testuser"
+    ]);
+
+    public static async Task SeedDemoDataAsync(
+        AppDbContext context,
+        Microsoft.AspNetCore.Identity.IPasswordHasher<User> passwordHasher,
+        IBadgeService badgeService)
     {
-        // 1. Clear existing test user if present (per user feedback: "清除目前的test user")
-        var existingTestUser = await context.Users
-            .FirstOrDefaultAsync(u => u.Username == "testuser" || u.Email == "test@runstreak.app");
-
-        if (existingTestUser != null)
-        {
-            context.Users.Remove(existingTestUser);
-            await context.SaveChangesAsync();
-        }
-
-        // Check if 20 demo users already exist
-        var existingUserCount = await context.Users.CountAsync();
-        if (existingUserCount >= 20)
-        {
-            return;
-        }
-
-        var rng = new Random(2026);
         var baseDate = DateTime.UtcNow.Date;
 
-        // Sample runner names & styles
+        // Check if demo data is fresh (most recent run by any demo user is today or yesterday)
+        var newestDemoRunDate = await context.Runs
+            .Where(r => DemoUsernames.Contains(r.User.Username))
+            .MaxAsync(r => (DateTime?)r.RunDate);
+
+        if (newestDemoRunDate.HasValue && newestDemoRunDate.Value.Date >= baseDate.AddDays(-1))
+        {
+            return; // Demo data is up to date relative to today
+        }
+
+        // Bulk-delete existing demo users (cascades Runs, UserBadges, RefreshTokens, StreakFreezes, UserChallenges)
+        // Real user accounts created via registration are left untouched.
+        await context.Users
+            .Where(u => DemoUsernames.Contains(u.Username))
+            .ExecuteDeleteAsync();
+
+        var rng = new Random(2026);
+
+        // Fetch available route challenges to assign to demo users
+        var challenges = await context.Challenges.ToListAsync();
+
+        // Sample runner configurations (19 demo users + testuser)
         var runnerConfigs = new[]
         {
             ("Sarah Jenkins", "sarah_j", "avataaars"),
@@ -626,8 +642,10 @@ public static class DbSeeder
             ("Tariq Al-Mansoor", "tariq_a", "pixel-art"),
         };
 
+        int configIndex = 0;
         foreach (var (name, uname, style) in runnerConfigs)
         {
+            configIndex++;
             var user = new User
             {
                 Id = Guid.NewGuid(),
@@ -644,29 +662,28 @@ public static class DbSeeder
             context.Users.Add(user);
             await context.SaveChangesAsync();
 
-            // Generate 15-30 runs with distances from 2 to 43 km
+            // Generate 15-30 runs with distances from 2 to 43 km ending on or near today
             int runCount = rng.Next(15, 31);
             decimal totalDist = 0m;
             int totalPts = 0;
 
             for (int i = 0; i < runCount; i++)
             {
-                int daysAgo = (runCount - i) * rng.Next(1, 3);
+                int daysAgo = (runCount - 1 - i) * rng.Next(1, 3);
                 var runDate = baseDate.AddDays(-daysAgo);
 
-                // Varied distance (2 - 43 km)
                 decimal distance = rng.Next(1, 100) < 95
-                    ? Math.Round((decimal)(rng.NextDouble() * 12 + 2), 2) // 2 to 14 km
-                    : Math.Round((decimal)(rng.NextDouble() * 23 + 20), 2); // 20 to 43 km (long/marathon)
+                    ? Math.Round((decimal)(rng.NextDouble() * 12 + 2), 2)
+                    : Math.Round((decimal)(rng.NextDouble() * 23 + 20), 2);
 
-                double paceMin = rng.NextDouble() * 2.5 + 4.5; // 4:30 to 7:00 /km
+                double paceMin = rng.NextDouble() * 2.5 + 4.5;
                 decimal duration = Math.Round(distance * (decimal)paceMin, 1);
                 int points = (int)(distance * 10m + duration);
 
                 totalDist += distance;
                 totalPts += points;
 
-                var run = new Run
+                context.Runs.Add(new Run
                 {
                     UserId = user.Id,
                     DistanceKm = distance,
@@ -677,21 +694,38 @@ public static class DbSeeder
                     PerceivedEffort = rng.Next(1, 6),
                     PointsEarned = points,
                     CreatedAt = runDate
-                };
-                context.Runs.Add(run);
+                });
             }
 
             user.TotalRuns = runCount;
-            user.TotalDistanceKm = totalDist;
+            user.TotalDistanceKm = Math.Round(totalDist, 2);
             user.TotalPoints = totalPts;
             user.CurrentStreak = rng.Next(1, 12);
             user.LongestStreak = Math.Max(user.CurrentStreak, rng.Next(5, 20));
             user.StreakFreezeCount = rng.Next(1, 5);
 
             await context.SaveChangesAsync();
+
+            // Check & award badges for consistency via real BadgeService
+            await badgeService.CheckAndAwardBadgesAsync(user.Id);
+
+            // Assign active route challenge to ~half of the demo users
+            if (challenges.Count > 0 && configIndex % 2 == 0)
+            {
+                var challenge = challenges[(configIndex - 1) % challenges.Count];
+                context.UserChallenges.Add(new UserChallenge
+                {
+                    UserId = user.Id,
+                    ChallengeId = challenge.Id,
+                    ProgressDistanceKm = Math.Round(challenge.TargetDistanceKm * (decimal)(rng.NextDouble() * 0.7 + 0.1), 1),
+                    IsActive = true,
+                    StartedAt = baseDate.AddDays(-rng.Next(5, 30))
+                });
+                await context.SaveChangesAsync();
+            }
         }
 
-        // 2. Seed ENRICHED designated test account for MSA marker
+        // Seed designated test account for MSA marker (always up to date ending today)
         var testUser = new User
         {
             Id = Guid.NewGuid(),
@@ -708,15 +742,14 @@ public static class DbSeeder
         context.Users.Add(testUser);
         await context.SaveChangesAsync();
 
-        // Generate 42 runs across 60 days, yielding ~300 km total distance and a 14-day streak!
         decimal testTotalDist = 0m;
         int testTotalPts = 0;
 
-        // First 28 runs spaced 1-2 days apart
+        // Historical runs (days -56 to -14)
         for (int i = 28; i >= 15; i--)
         {
             var runDate = baseDate.AddDays(-i * 2);
-            decimal dist = Math.Round((decimal)(rng.NextDouble() * 8 + 4), 2); // 4 - 12 km
+            decimal dist = Math.Round((decimal)(rng.NextDouble() * 8 + 4), 2);
             decimal dur = Math.Round(dist * (decimal)(rng.NextDouble() * 1.5 + 4.8), 1);
             int pts = (int)(dist * 10m + dur);
 
@@ -737,13 +770,13 @@ public static class DbSeeder
             });
         }
 
-        // Continuous 14-day streak up to today!
+        // Continuous 14-day streak up to TODAY (days -13 to 0)
         for (int day = 13; day >= 0; day--)
         {
             var runDate = baseDate.AddDays(-day);
-            decimal dist = day == 7 ? 21.1m : Math.Round((decimal)(rng.NextDouble() * 6 + 4), 2); // Includes a 21.1k Half Marathon!
+            decimal dist = day == 7 ? 21.1m : Math.Round((decimal)(rng.NextDouble() * 6 + 4), 2);
             decimal dur = Math.Round(dist * (decimal)(rng.NextDouble() * 1.2 + 5.0), 1);
-            int pts = (int)(dist * 10m + dur) + 50; // streak bonus
+            int pts = (int)(dist * 10m + dur) + 50;
 
             testTotalDist += dist;
             testTotalPts += pts;
@@ -764,14 +797,17 @@ public static class DbSeeder
 
         testUser.TotalRuns = 42;
         testUser.TotalDistanceKm = Math.Round(testTotalDist, 2);
-        testUser.TotalPoints = testTotalPts + 1200; // includes badge bonuses
+        testUser.TotalPoints = testTotalPts + 1200;
         testUser.CurrentStreak = 14;
         testUser.LongestStreak = 18;
-        testUser.StreakFreezeCount = 3; // has used 2
+        testUser.StreakFreezeCount = 3;
 
         await context.SaveChangesAsync();
 
-        // Seed 1-2 streak freeze records for test user
+        // Check & award badges for testuser
+        await badgeService.CheckAndAwardBadgesAsync(testUser.Id);
+
+        // Seed streak freeze record for test user
         context.StreakFreezes.Add(new StreakFreeze
         {
             UserId = testUser.Id,
@@ -780,15 +816,15 @@ public static class DbSeeder
             Date = baseDate.AddDays(-16)
         });
 
-        // Start active route challenge for test user (Tour de NZ - 300km route)
-        var tourDeNz = await context.Challenges.FirstOrDefaultAsync(c => c.Name.Contains("Tour de New Zealand"));
+        // Start active route challenge for test user (Tour de NZ)
+        var tourDeNz = challenges.FirstOrDefault(c => c.Name.Contains("Tour de New Zealand"));
         if (tourDeNz != null)
         {
             context.UserChallenges.Add(new UserChallenge
             {
                 UserId = testUser.Id,
                 ChallengeId = tourDeNz.Id,
-                ProgressDistanceKm = 185.5m, // 61.8% completed
+                ProgressDistanceKm = 185.5m,
                 IsActive = true,
                 StartedAt = baseDate.AddDays(-30)
             });
