@@ -72,7 +72,7 @@ export default function AvatarPicker({ selectedUrl, onSelect }: AvatarPickerProp
   return (
     <div className="space-y-4">
       {/* Scrollable list of styles */}
-      <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none snap-x snap-mandatory">
+      <div className="flex gap-2 overflow-x-auto pb-2.5 custom-scrollbar snap-x snap-mandatory">
         {STYLE_LIST.map((style) => {
           const isActive = activeStyle === style.key
           return (
@@ -93,7 +93,7 @@ export default function AvatarPicker({ selectedUrl, onSelect }: AvatarPickerProp
       </div>
 
       {/* Grid of Avatars */}
-      <div className="grid grid-cols-4 sm:grid-cols-6 gap-3 max-h-64 overflow-y-auto p-3 bg-[hsl(var(--color-surface-3))]/20 rounded-xl border border-[hsl(var(--color-border))]/20">
+      <div className="grid grid-cols-4 sm:grid-cols-6 gap-3 max-h-64 overflow-y-auto custom-scrollbar p-3 bg-[hsl(var(--color-surface-3))]/20 rounded-xl border border-[hsl(var(--color-border))]/20">
         {avatars.map(({ url, name }) => {
           const isSelected = selectedUrl === url
           return (

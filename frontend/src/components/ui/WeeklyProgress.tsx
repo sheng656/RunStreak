@@ -45,6 +45,18 @@ export default function WeeklyProgress({
     }
   }
 
+  const [customGoal, setCustomGoal] = useState<string>('')
+
+  function handleCustomSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    const val = parseFloat(customGoal)
+    if (isNaN(val) || val < 1 || val > 500) {
+      toast.error('Please enter a goal between 1 and 500 km')
+      return
+    }
+    handleGoalChange(val)
+  }
+
   return (
     <div className="card p-4 space-y-3">
       {/* Header */}
@@ -69,7 +81,7 @@ export default function WeeklyProgress({
 
       {/* Goal picker */}
       {editing && (
-        <div className="flex flex-wrap gap-1.5 animate-fade-in">
+        <div className="flex flex-wrap items-center gap-1.5 animate-fade-in pt-1">
           {PRESET_GOALS.map((g) => (
             <button
               key={g}
@@ -84,6 +96,28 @@ export default function WeeklyProgress({
               {g} km
             </button>
           ))}
+          <form onSubmit={handleCustomSubmit} className="flex items-center gap-1 ml-auto sm:ml-2">
+            <div className="relative flex items-center">
+              <input
+                type="number"
+                min="1"
+                max="500"
+                step="0.5"
+                placeholder="Custom"
+                value={customGoal}
+                onChange={(e) => setCustomGoal(e.target.value)}
+                className="w-20 px-2 py-1 text-xs rounded-lg border border-[hsl(var(--color-border))] bg-[hsl(var(--color-surface))] text-[hsl(var(--color-text))] focus:border-[hsl(var(--color-brand))] focus:outline-none"
+              />
+              <span className="absolute right-2 text-[10px] text-[hsl(var(--color-text-muted))] pointer-events-none">km</span>
+            </div>
+            <button
+              type="submit"
+              disabled={saving || !customGoal}
+              className="btn btn-primary btn-sm text-xs py-1 px-2.5"
+            >
+              Set
+            </button>
+          </form>
         </div>
       )}
 

@@ -1,13 +1,15 @@
 import { NavLink } from 'react-router-dom'
-import { LayoutDashboard, MapPin, Trophy, Medal, User } from 'lucide-react'
+import { LayoutDashboard, MapPin, Trophy, Medal, User, Compass } from 'lucide-react'
 
 const sidebarLinks = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/runs', icon: MapPin, label: 'My Runs' },
+  { to: '/challenges', icon: Compass, label: 'Challenges' },
   { to: '/badges', icon: Medal, label: 'Badges' },
   { to: '/leaderboard', icon: Trophy, label: 'Leaderboard' },
   { to: '/profile', icon: User, label: 'Profile' },
 ]
+
 
 export default function Sidebar() {
   return (

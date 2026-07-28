@@ -15,6 +15,7 @@ import RunHistoryPage from './pages/RunHistoryPage'
 import LogRunPage from './pages/LogRunPage'
 import BadgesPage from './pages/BadgesPage'
 import BadgeCelebrationPage from './pages/BadgeCelebrationPage'
+import ChallengesPage from './pages/ChallengesPage'
 import LeaderboardPage from './pages/LeaderboardPage'
 import ProfilePage from './pages/ProfilePage'
 import NotFoundPage from './pages/NotFoundPage'
@@ -84,10 +85,12 @@ function App() {
           <Route index element={<DashboardPage />} />
           <Route path="runs" element={<RunHistoryPage />} />
           <Route path="runs/new" element={<LogRunPage />} />
+          <Route path="challenges" element={<ChallengesPage />} />
           <Route path="badges" element={<BadgesPage />} />
           <Route path="leaderboard" element={<LeaderboardPage />} />
           <Route path="profile" element={<ProfilePage />} />
         </Route>
+
 
         <Route
           path="/badges/celebration"

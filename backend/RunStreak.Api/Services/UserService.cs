@@ -5,12 +5,16 @@ using System.Text.Json;
 
 namespace RunStreak.Api.Services;
 
-public class UserService(AppDbContext context) : IUserService
+public class UserService(AppDbContext context, IStreakService streakService) : IUserService
 {
     private readonly AppDbContext _context = context;
+    private readonly IStreakService _streakService = streakService;
 
     public async Task<UserProfileDto?> GetUserProfileAsync(Guid userId)
     {
+        // Trigger streak recalculation & auto streak freeze application on profile fetch
+        await _streakService.RecalculateStreakAsync(userId);
+
         var user = await _context.Users
             .AsNoTracking()
             .FirstOrDefaultAsync(u => u.Id == userId);
@@ -197,6 +201,9 @@ public class UserService(AppDbContext context) : IUserService
 
     public async Task<UserStatsDto?> GetUserStatsAsync(Guid userId)
     {
+        // Recalculate streak & auto-apply rest day tickets
+        await _streakService.RecalculateStreakAsync(userId);
+
         var user = await _context.Users
             .AsNoTracking()
             .FirstOrDefaultAsync(u => u.Id == userId);

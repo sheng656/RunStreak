@@ -27,9 +27,11 @@ export default function Navbar() {
   const navLinks = [
     { to: '/', label: 'Dashboard' },
     { to: '/runs', label: 'Runs' },
+    { to: '/challenges', label: 'Challenges' },
     { to: '/badges', label: 'Badges' },
     { to: '/leaderboard', label: 'Leaderboard' },
   ]
+
 
   return (
     <header className="sticky top-0 z-50 glass border-b border-[hsl(var(--color-border)/0.5)]">

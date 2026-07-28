@@ -1,8 +1,9 @@
 # RunStreak — Project Plan (LIVE)
 
-> **Last updated:** 2026-07-21
-> **Current focus:** Phase 10 — Submission Preparation (frontend TypeScript build hotfix complete)
-> **Overall status:** ✅ Phase 0-8 complete, Phase 11 complete, Phase 10 in progress
+> **Last updated:** 2026-07-28
+> **Current focus:** Pre-Submission Polish & Route Challenge Sprint
+> **Overall status:** ✅ Phase 0-8 complete, Phase 10 complete, Phase 11 complete
+
 
 This file is the single source of truth for what's done, what's in progress, and what's next. Agents must read it at the start of every session and update it at the end.
 
@@ -358,25 +359,30 @@ See ADR: `specs/decisions/011-solo-motivation-ux.md`.
 
 **Goal:** Ensure all submission requirements are met. Nothing should be TODO.
 
-- [ ] README final pass:
-  - [ ] Live deployment URLs filled in
-  - [ ] "What makes this project stand out" section filled in
-  - [ ] Tech stack section accurate (styling = Tailwind CSS)
-  - [ ] Advanced requirements checklist — exactly 3, all justified
-  - [ ] Security measures section — detailed write-up per measure
-  - [ ] Self-reflection section filled in
-  - [ ] Getting started / environment setup instructions complete
-- [ ] `/specs` completeness check:
-  - [ ] `specs/00-architecture.md` exists and is up to date
-  - [ ] `specs/01-data-model.md` exists and is up to date
-  - [ ] All ADRs in `specs/decisions/` for non-trivial choices
-  - [ ] All prompt logs in `specs/prompts/` for every agent session
-- [ ] Commit history review: ensure regular, meaningful commits (not a single dump)
-- [ ] Record 6-minute submission video:
-  - Part 1: How AI was used during development (reference `/specs`)
-  - Part 2: Design decisions made during the project
-- [ ] Final deployment verification: both URLs live and working
-  - [x] Hotfix: make `/api/auth/refresh` compatible with JSON and form-urlencoded payloads to prevent production `415 Unsupported Media Type` on login-page silent refresh
+- [x] README final pass:
+  - [x] Live deployment URLs filled in
+  - [x] "What makes this project stand out" section filled in (AI OCR, 48-badge engine, Route Challenges, Solo habit UX)
+  - [x] Tech stack section accurate & structured (backend/frontend separation)
+  - [x] Advanced requirements checklist — exactly 3, all justified
+  - [x] Security measures section — detailed write-up per measure
+  - [x] Self-reflection section filled in
+  - [x] Getting started / environment setup instructions complete
+- [x] `/specs` completeness check:
+  - [x] `specs/00-architecture.md` exists and is up to date
+  - [x] `specs/01-data-model.md` exists and is up to date
+  - [x] All ADRs in `specs/decisions/` for non-trivial choices (001–012)
+  - [x] All prompt logs in `specs/prompts/` for every agent session
+- [x] Commit history review: regular, meaningful commits
+- [x] Submission video script drafted (`video_script.md` artifact ready)
+- [x] Pre-submission polish items:
+  - [x] Avatar category picker responsive layout & scrollbar fix
+  - [x] Dashboard weekly goal custom numeric input box
+  - [x] Rest day ticket balance auto-recalculation fix on dashboard load
+  - [x] Route Challenge Mode (`Challenge`, `UserChallenge`, `/challenges` page, active widget)
+  - [x] Mock data seeding (20 users, 2-43km range, clear old test user, enriched `testuser` account)
+  - [x] Scalar API documentation content & route completeness audit
+- [x] Final deployment verification & tests (36/36 backend tests pass, 18/18 frontend tests pass)
+
 
 ---
 

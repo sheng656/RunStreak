@@ -10,10 +10,10 @@ RunStreak is a full-stack web application with a decoupled frontend and backend,
 ┌──────────────────────┐         HTTPS          ┌─────────────────────────┐
 │   React + TS SPA     │ ◄─────────────────────► │  .NET 10 Web API        │
 │   (Vercel)           │   Bearer token (header) │  (Azure App Service)    │
-│                      │   Refresh cookie (auto) │                         │
-│   Zustand stores     │   CSRF token (header)   │  Scalar API docs        │
+│                      │   Refresh token (body)  │                         │
+│   Zustand stores     │                         │  Scalar API docs        │
 │   Tailwind CSS       │                         │  EF Core                │
-│   React Router       │                         │  JWT auth               │
+│   React Router       │                         │  JWT auth & Security    │
 └──────────────────────┘                         └────────┬────────────────┘
                                                           │
                                                           │ EF Core
@@ -27,38 +27,35 @@ RunStreak is a full-stack web application with a decoupled frontend and backend,
 ## Frontend Architecture
 
 - **Framework:** React + TypeScript (Vite)
-- **State management:** Zustand — one store per domain:
+- **State management:** Zustand — separate modular stores:
   - `authStore` — access token (in-memory only), user profile, login/logout/refresh actions
   - `themeStore` — light/dark mode, persisted to localStorage
   - `runStore` — runs list, pagination, CRUD actions
   - `gamificationStore` — points, streak, badges, leaderboard data
 - **Styling:** Tailwind CSS (utility-first, `dark:` class strategy for theme switching)
-- **Routing:** React Router (v6+)
-- **API client:** Single typed module (`src/api/client.ts`) — Axios or fetch wrapper with:
+- **Routing:** React Router (v7)
+- **API client:** Single typed module (`src/api/client.ts`) — Axios wrapper with:
   - Auto-attach `Authorization: Bearer` header
-  - Auto-refresh on 401 response
-  - `withCredentials: true` for refresh endpoint cookies
-  - CSRF token echoing (`X-CSRF-Token` header from `csrf_token` cookie)
-- **Testing:** Vitest + React Testing Library, co-located with components
+  - Auto-refresh on 401 response using rotated refresh token from localStorage
+- **Testing:** Vitest + React Testing Library
 
 ## Backend Architecture
 
-- **Framework:** C# / .NET 10 Web API (Controllers — chosen for clarity and conventional structure)
+- **Framework:** C# / .NET 10 Web API (Controllers)
 - **ORM:** Entity Framework Core (code-first migrations)
 - **Database:** Azure SQL Database (Free offer tier)
 - **API documentation:** Scalar (replaces Swagger UI entirely)
-- **Auth:** Split-storage JWT — see `specs/decisions/001-split-storage-jwt.md`
+- **Auth:** Bearer-only JWT — see `specs/decisions/006-simplified-bearer-auth.md`
 - **Security layers:**
   1. Password hashing — `PasswordHasher<User>` (PBKDF2)
-  2. Anti-CSRF — `SameSite=Strict` cookie + double-submit CSRF token
-  3. Data validation — Data Annotations on DTOs
-  4. Rate limiting — ASP.NET Core built-in rate-limiting middleware
-  5. CORS — explicit allow-list, `AllowCredentials()`, no wildcard
+  2. Data validation & sanitisation — Data Annotations on DTOs
+  3. Rate limiting — ASP.NET Core built-in rate-limiting middleware (fixed login policy & sliding run submission policy)
+  4. Access token in-memory / Refresh token rotated & SHA-256 hashed in DB
+  5. CORS — explicit allow-list, no wildcard
 - **Code organization:**
-  - Controllers → Services → EF Core (one `AppDbContext`)
-  - DTOs for all API input/output (never expose EF entities)
-  - Async all the way down
-  - Nullable reference types enabled
+  - Controllers → Services → EF Core (`AppDbContext`)
+  - Domain Services: `AuthService`, `RunService`, `PointsService`, `StreakService`, `BadgeService`, `LeaderboardService`, `UserService`, `StreakFreezeService`, `ChallengeService`, `ScreenshotImportService`
+  - DTOs for all API input/output
 - **Testing:** xUnit + WebApplicationFactory for integration tests
 
 ## Authentication Flow
@@ -69,39 +66,32 @@ RunStreak is a full-stack web application with a decoupled frontend and backend,
     │  POST /api/auth/login         │
     │  { email, password }          │
     │ ────────────────────────────► │
-    │                               │ Validate credentials
-    │                               │ Hash-compare password
+    │                               │ Validate credentials & password hash
     │                               │ Generate access token (15 min)
-    │                               │ Generate refresh token
-    │                               │ Store hash(refresh) in DB
-    │                               │ Set HttpOnly cookie (refresh)
-    │                               │ Set non-HttpOnly cookie (csrf_token)
+    │                               │ Generate refresh token (7 days)
+    │                               │ Store SHA-256 hash(refresh) in DB
     │  ◄──────────────────────────  │
-    │  200 { accessToken, user }    │
-    │  Set-Cookie: refresh_token    │
-    │  Set-Cookie: csrf_token       │
+    │  200 { accessToken,           │
+    │        refreshToken, user }   │
     │                               │
     │  GET /api/runs                │
     │  Authorization: Bearer <at>   │
     │ ────────────────────────────► │
-    │                               │ Validate JWT
+    │                               │ Validate JWT bearer token
     │  ◄──────────────────────────  │
     │  200 { runs: [...] }          │
     │                               │
     │  POST /api/auth/refresh       │
-    │  Cookie: refresh_token (auto) │
-    │  X-CSRF-Token: <csrf_value>   │
+    │  { refreshToken }             │
     │ ────────────────────────────► │
-    │                               │ Validate cookie
-    │                               │ Verify CSRF header = cookie
-    │                               │ Verify hash(cookie) exists in DB
-    │                               │ Rotate: revoke old, issue new
+    │                               │ Verify hash(refreshToken) in DB
+    │                               │ Rotate: revoke old, issue new pair
     │  ◄──────────────────────────  │
-    │  200 { accessToken }          │
-    │  Set-Cookie: refresh_token    │
-    │  Set-Cookie: csrf_token       │
+    │  200 { accessToken,           │
+    │        refreshToken }         │
     │                               │
 ```
+
 
 ## Deployment Architecture
 

@@ -103,6 +103,23 @@
   .dark ::-webkit-scrollbar-thumb {
     background: hsl(var(--color-border));
   }
+
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+    display: block !important;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: hsl(var(--color-surface-2) / 0.5);
+    border-radius: var(--radius-full);
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: hsl(var(--color-text-muted) / 0.4);
+    border-radius: var(--radius-full);
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--color-brand));
+  }
 }
 
 /* ── Animations / Keyframes ────────────────────────────────────────────── */

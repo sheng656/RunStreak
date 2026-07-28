@@ -22,6 +22,7 @@ builder.Services.AddScoped<ILeaderboardService, LeaderboardService>();
 builder.Services.AddScoped<IRunService, RunService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IStreakFreezeService, StreakFreezeService>();
+builder.Services.AddScoped<IChallengeService, ChallengeService>();
 // AI screenshot import via Google Gemini (Google.GenAI + Microsoft.Extensions.AI)
 builder.Services.AddScoped<IScreenshotImportService, ScreenshotImportService>();
 
@@ -162,11 +163,15 @@ using (var scope = app.Services.CreateScope())
     try
     {
         var dbContext = services.GetRequiredService<AppDbContext>();
+        var hasher = services.GetRequiredService<IPasswordHasher<User>>();
         
-        // Ensure pending migrations (like PerceivedEffort and Badge Rarity) are applied to Azure SQL
+        // Ensure pending migrations are applied to Azure SQL / local database
         await dbContext.Database.MigrateAsync();
         
         await DbSeeder.SeedBadgesAsync(dbContext);
+        await DbSeeder.SeedChallengesAsync(dbContext);
+        await DbSeeder.SeedDemoDataAsync(dbContext, hasher);
+
     }
     catch (Exception ex)
     {

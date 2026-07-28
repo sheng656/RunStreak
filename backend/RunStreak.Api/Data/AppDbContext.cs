@@ -15,10 +15,14 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<UserBadge> UserBadges => Set<UserBadge>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<StreakFreeze> StreakFreezes => Set<StreakFreeze>();
+    public DbSet<Challenge> Challenges => Set<Challenge>();
+    public DbSet<UserChallenge> UserChallenges => Set<UserChallenge>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+        
+        // (existing configuration unchanged) ...
 
         // ── Users ───────────────────────────────────────────────────────────
         modelBuilder.Entity<User>(entity =>
@@ -117,5 +121,43 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
                 .HasForeignKey(sf => sf.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
+
+        // ── Challenges ──────────────────────────────────────────────────────
+        modelBuilder.Entity<Challenge>(entity =>
+        {
+            entity.HasKey(c => c.Id);
+            entity.HasIndex(c => c.Name).IsUnique();
+            entity.Property(c => c.Name).HasMaxLength(100).IsRequired();
+            entity.Property(c => c.Description).HasMaxLength(500).IsRequired();
+            entity.Property(c => c.TargetDistanceKm).HasPrecision(8, 2).IsRequired();
+            entity.Property(c => c.IconUrl).HasMaxLength(512).IsRequired();
+            entity.Property(c => c.Rarity).HasMaxLength(20).IsRequired().HasDefaultValue("common");
+
+            entity.HasOne(c => c.Badge)
+                .WithMany()
+                .HasForeignKey(c => c.BadgeId)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // ── UserChallenges ──────────────────────────────────────────────────
+        modelBuilder.Entity<UserChallenge>(entity =>
+        {
+            entity.HasKey(uc => uc.Id);
+            entity.HasIndex(uc => new { uc.UserId, uc.ChallengeId });
+            entity.HasIndex(uc => new { uc.UserId, uc.IsActive });
+
+            entity.Property(uc => uc.ProgressDistanceKm).HasPrecision(8, 2).IsRequired();
+
+            entity.HasOne(uc => uc.User)
+                .WithMany()
+                .HasForeignKey(uc => uc.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(uc => uc.Challenge)
+                .WithMany(c => c.UserChallenges)
+                .HasForeignKey(uc => uc.ChallengeId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
     }
 }
+

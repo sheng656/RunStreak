@@ -16,8 +16,10 @@ import WeeklyCalendar from '../components/ui/WeeklyCalendar'
 import WeeklyProgress from '../components/ui/WeeklyProgress'
 import MotivationalInsight from '../components/ui/MotivationalInsight'
 import PersonalRecords from '../components/ui/PersonalRecords'
+import ActiveChallengeWidget from '../components/ui/ActiveChallengeWidget'
 import toast from 'react-hot-toast'
 import type { Run, UserBadge, UserStats, BadgeWithProgress } from '../types/api'
+
 
 export default function DashboardPage() {
   const { user, setUser } = useAuthStore()
@@ -55,21 +57,25 @@ export default function DashboardPage() {
     async function loadDashboard() {
       if (!user) return
       try {
-        const [runsRes, badgesRes, statsRes, progressRes] = await Promise.all([
+        const [runsRes, badgesRes, statsRes, progressRes, meRes] = await Promise.all([
           runsApi.list(1, 7),  // fetch 7 most recent so we have a week's worth for calendar
           usersApi.getBadges(user.id),
           usersApi.getStats(user.id),
           usersApi.getBadgesWithProgress(),
+          usersApi.getMe(),
         ])
         setRecentRuns(runsRes.data.runs)
         setRecentBadges(badgesRes.data.slice(0, 5))
         setStats(statsRes.data)
         setBadgesWithProgress(progressRes.data)
+        if (meRes.data) {
+          setUser(meRes.data)
+        }
         setUserStats({
-          totalPoints: user.totalPoints,
-          currentStreak: user.currentStreak,
-          longestStreak: user.longestStreak,
-          totalDistanceKm: user.totalDistanceKm,
+          totalPoints: meRes.data.totalPoints,
+          currentStreak: meRes.data.currentStreak,
+          longestStreak: meRes.data.longestStreak,
+          totalDistanceKm: meRes.data.totalDistanceKm,
         })
       } catch {
         // Silently handle — stats from user profile are still available
@@ -218,7 +224,11 @@ export default function DashboardPage() {
         </div>
       </div>
 
+      {/* Active Route Challenge Widget */}
+      <ActiveChallengeWidget />
+
       {/* Weekly Calendar — "Don't break the chain" */}
+
       <div className="card p-4">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-sm font-semibold text-[hsl(var(--color-text))]">This Week</h2>

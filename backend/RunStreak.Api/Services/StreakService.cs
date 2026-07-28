@@ -157,6 +157,17 @@ public class StreakService(AppDbContext context) : IStreakService
             currentStreak = currentStreakSequence;
         }
 
+        if (user != null)
+        {
+            user.CurrentStreak = currentStreak;
+            if (longestStreak > user.LongestStreak)
+            {
+                user.LongestStreak = longestStreak;
+            }
+            user.UpdatedAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+        }
+
         return new StreakResult
         {
             CurrentStreak = currentStreak,

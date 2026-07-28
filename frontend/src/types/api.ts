@@ -190,3 +190,33 @@ export interface ApiError {
   status: number
   errors?: Record<string, string[]>
 }
+
+// Challenge DTOs
+export interface Challenge {
+  id: string
+  name: string
+  description: string
+  targetDistanceKm: number
+  iconUrl: string
+  rarity: BadgeRarity
+  sortOrder: number
+  isActive: boolean
+  isCompleted: boolean
+  progressDistanceKm: number
+  completionPercentage: number
+  startedAt: string | null
+  completedAt: string | null
+}
+
+export interface ActiveChallengeSummary {
+  challengeId: string
+  name: string
+  description: string
+  targetDistanceKm: number
+  progressDistanceKm: number
+  remainingDistanceKm: number
+  completionPercentage: number
+  iconUrl: string
+  rarity: BadgeRarity
+}
+

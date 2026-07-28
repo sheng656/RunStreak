@@ -30,34 +30,50 @@ Gamification works by layering game mechanics on top of a non-game task to drive
 - **Progress tracking** — distance, pace, and streak history are visualised over time.
 The goal is to take an activity people often struggle to stick with (running consistently) and apply proven engagement mechanics to encourage long-term habit formation — exactly the kind of non-game application the brief describes.
  
+## Test Account (for markers)
+
+| Field | Value |
+|---|---|
+| **Email** | `test@runstreak.app` |
+| **Password** | `Test1234!` |
+| **Profile** | Sheng (Test Runner) |
+| **Pre-populated Data** | 42 logged runs (~300 km total), 14-day active streak, 18-day longest streak, active Route Challenge (*Tour de New Zealand*), 3 Rest Day Tickets remaining, multiple unlocked badges across rarity tiers |
+
+> *Note: This is a pre-seeded demonstration account with rich historical activity so markers can evaluate the full gamification experience immediately.*
+
 ## What makes this project stand out
- 
-- TODO: fill in once built — e.g. "real-time leaderboard updates via WebSockets", "custom badge rule engine that's easy to extend", "ink-wash / custom visual identity", etc.
-- TODO
-- TODO
+
+1. **Multimodal AI Screenshot OCR Run Import** — Users can upload a screenshot from Strava, Garmin, Nike Run Club, or Apple Health. The app uses Google Gemini (multimodal vision) to automatically parse run metrics (distance, duration, pace, date, heart rate, elevation, platform) with fallback validation.
+2. **Comprehensive 48-Badge Gamification Engine** — A extensible rule engine with 5 rarity tiers (Common, Rare, Epic, Legendary, Heroic). Features single-run distance, streak milestones, speed pace thresholds, cumulative distance counts (e.g. 5K × 10, 10K × 20), and dedicated celebration views with particle effects.
+3. **Route Challenge Mode (Iconic Long-Distance Routes)** — Solves long-term motivation decay by allowing users to pick real-world cumulative routes (from a 5km Park Run to the 300km Tour de New Zealand or 500km Trans-Alpine Expedition). Each run contributes to their active challenge, displayed via a dedicated route dashboard widget.
+4. **Solo-Runner Habit UX & Rest Day Ticket System** — Designed for solo runners who may not have active friends on a leaderboard. Includes weekly goal progress tracking with custom numeric goal setting, a 7-day activity calendar ("don't break the chain"), motivational insights engine, personal records tracking, and a 5-ticket "Streak Freeze" protection system so rest days don't unfairly destroy long streaks.
+
 ## Tech stack
- 
-**Backend**
-- C# / .NET 10
-- Entity Framework Core
-- Azure SQL Database
-- Scalar (OpenAPI documentation UI)
-- xUnit (unit testing)
-- Hosted on Azure App Service
-**Frontend**
-- React + TypeScript
-- Zustand (state management)
-- React Router
-- Tailwind CSS (utility-first styling)
-- Vitest / React Testing Library (unit testing)
-- Hosted on Vercel
+
+### Backend
+- **Framework:** C# / .NET 10 Web API
+- **ORM & Database:** Entity Framework Core with Azure SQL Database
+- **API Documentation:** Scalar API Reference 
+- **Security:** Bearer-only JWT authentication (access token in memory, refresh token in localStorage with SHA-256 server-side hashing & rotation), ASP.NET Core Identity PBKDF2 password hashing, ASP.NET Core Rate Limiting middleware (login IP & run-submit user policies)
+- **Testing:** xUnit unit tests + WebApplicationFactory integration tests
+- **Hosting:** Azure App Service (F1/B1 tier, Australia East)
+
+### Frontend
+- **Framework & Build:** React + TypeScript (scaffolded via Vite)
+- **State Management:** Zustand (scored advanced requirement #1) — separate modular stores for `authStore`, `runStore`, `gamificationStore`, and `themeStore`
+- **Routing:** React Router v7
+- **Styling:** Tailwind CSS v4 (utility-first with glassmorphism aesthetics, custom CSS design system tokens)
+- **Theme Switching:** Dark / Light mode toggle persisted to localStorage (scored advanced requirement #2)
+- **Testing:** Vitest + React Testing Library
+- **Hosting:** Vercel
+
 ## Basic requirements checklist
- 
+
 **Backend**
 - [x] Built with C# / .NET 10+
 - [x] Entity Framework Core for data access
 - [x] SQL database (Azure SQL Database) for persistence
-- [x] Full CRUD operations (runs, badges, users)
+- [x] Full CRUD operations (runs, badges, users, challenges)
 - [x] Regular, meaningful commit history
 - [x] Unit tests covering key backend logic
 - [x] Deployed (Azure App Service)
@@ -70,10 +86,11 @@ The goal is to take an activity people often struggle to stick with (running con
 - [x] Regular, meaningful commit history
 - [x] Unit tests covering key components
 - [x] Deployed (Vercel)
+
 ## Advanced requirements
- 
+
 > Only the top 3 listed below will be marked, per the assessment brief.
- 
+
 1. **State management library — Zustand**
    Used to manage auth state, run/activity data, gamification state (points, badges, streaks), and theme preference across the app without prop-drilling.
 2. **Theme switching — light / dark mode**
@@ -88,15 +105,17 @@ The goal is to take an activity people often struggle to stick with (running con
    - **Password hashing** — User passwords are hashed and salted using ASP.NET Core Identity's built-in `PasswordHasher<User>` (PBKDF2-based) before persistence. Raw passwords are never stored in the database or logged anywhere in the system. Justification: protecting user credentials in the event of a database breach is a fundamental security requirement for any modern web application.
 
    > **Note on access token storage:** the short-lived access token (15 min) is stored in memory only (Zustand store, never `localStorage`/`sessionStorage`), limiting XSS blast radius to one short window. The refresh token is stored in `localStorage` for session persistence across page reloads; it is rotated on every use and stored hashed (SHA-256) server-side, so a database breach does not expose usable tokens.
+
 ### Stretch goals (not submitted for marking, time permitting)
- 
+
 These are extra features that may be implemented for portfolio depth, but per the brief only the 3 features above are scored:
- 
+
 - [ ] WebSockets — real-time leaderboard updates
 - [ ] Performance tests, system logging and metrics
 - [ ] Multiplayer functionality (group challenges)
+
 ## Project structure
- 
+
 ```
 /
 ├── backend/          # .NET 10 Web API
@@ -104,11 +123,11 @@ These are extra features that may be implemented for portfolio depth, but per th
 ├── specs/            # Planning docs, AI prompts, architecture decisions
 └── README.md
 ```
- 
+
 ## AI usage
- 
+
 AI tools were used throughout planning, architecture design, and development. A full record of prompts, agent instructions, and design rationale is kept in [`/specs`](./specs), as required by the assessment brief — see that folder for the detailed log rather than a summary here.
- 
+
 ## Getting started locally
 
 ### Prerequisites
@@ -117,10 +136,10 @@ AI tools were used throughout planning, architecture design, and development. A 
 - Azure SQL Database (or a local SQL Server instance)
 
 ### Backend
-```bash
-cd backend/RunStreak.Api
+```powershell
+Set-Location backend/RunStreak.Api
 # Copy the example config and fill in your real values
-cp appsettings.Example.json appsettings.Development.json
+Copy-Item appsettings.Example.json appsettings.Development.json
 # Edit appsettings.Development.json — set ConnectionStrings:DefaultConnection and Jwt:Key
 dotnet restore
 dotnet ef database update
@@ -128,8 +147,8 @@ dotnet run
 ```
 
 ### Frontend
-```bash
-cd frontend
+```powershell
+Set-Location frontend
 npm install
 # Create .env.local with:
 #   VITE_API_URL=https://localhost:<port>/api
@@ -137,23 +156,28 @@ npm run dev
 ```
 
 > **Note:** `appsettings.Development.json` and `.env.local` are gitignored and must never be committed. See `appsettings.Example.json` for the expected shape.
- 
+
 ## Testing
- 
-```bash
+
+```powershell
 # Backend
-cd backend
+Set-Location backend
 dotnet test
- 
+
 # Frontend
-cd frontend
+Set-Location frontend
 npm run test
 ```
- 
+
 ## Self-reflection
- 
-*TODO — fill in at the end of the project: what would you do differently if you started again?*
- 
+
+Building RunStreak was a rewarding experience that bridged domain knowledge in running and habit formation with modern full-stack web engineering. If I were to start this project over, I would focus on three main areas:
+
+1. **Earlier Integration Testing for Cold Starts**: Azure SQL Free Tier auto-pauses after inactivity. While EF Core retry policies handle cold-start reconnects well, early development assumption of an always-on DB led to small timeout tweaks during Phase 8 deployment. Planning for transient database latency from Day 1 is crucial.
+2. **Simplified Security Architecture Earlier**: My initial auth design used a split HttpOnly cookie / CSRF double-submit approach. While robust for standard web apps, managing cross-origin cookies between Vercel and Azure App Service added CORS complexity. Switching to a bearer-only JWT token model (in-memory access token + localStorage rotated refresh token) eliminated CSRF surface while dramatically streamlining client-server communication.
+3. **Spec-Driven Prompt Logging as a Core Habit**: Maintaining `/specs` required discipline. Automating prompt logging via agent instruction files early on ensured every architecture decision (ADRs 001–012) had clear technical justification documented alongside code implementations.
+
 ## Author
- 
-Sheng Chen — [LinkedIn](https://www.linkedin.com/in/sheng-chen-chsh48/) · [Portfolio: [sheng.nz](https://www.sheng.nz/)]
+
+Sheng Chen — [LinkedIn](https://www.linkedin.com/in/sheng-chen-chsh48/) · [Portfolio: sheng.nz](https://www.sheng.nz/)
+

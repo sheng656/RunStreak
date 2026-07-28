@@ -10,13 +10,15 @@ public class RunService(
     IPointsService pointsService,
     IStreakService streakService,
     IBadgeService badgeService,
-    IStreakFreezeService streakFreezeService) : IRunService
+    IStreakFreezeService streakFreezeService,
+    IChallengeService challengeService) : IRunService
 {
     private readonly AppDbContext _context = context;
     private readonly IPointsService _pointsService = pointsService;
     private readonly IStreakService _streakService = streakService;
     private readonly IBadgeService _badgeService = badgeService;
     private readonly IStreakFreezeService _streakFreezeService = streakFreezeService;
+    private readonly IChallengeService _challengeService = challengeService;
 
     public async Task<RunDto?> GetRunByIdAsync(Guid runId, Guid userId)
     {
@@ -115,6 +117,9 @@ public class RunService(
 
                 // 4b. Check and auto-earn streak freezes
                 await _streakFreezeService.CheckAutoEarnAsync(userId);
+
+                // 4c. Update active route challenge progress
+                await _challengeService.UpdateProgressOnRunLoggedAsync(userId, run.DistanceKm);
 
                 // 5. Check and award badges
                 var newlyUnlockedBadges = await _badgeService.CheckAndAwardBadgesAsync(userId);

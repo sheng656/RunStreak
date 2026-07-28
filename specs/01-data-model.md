@@ -11,6 +11,9 @@ erDiagram
     Users ||--o{ UserBadges : "earns"
     Badges ||--o{ UserBadges : "awarded as"
     Users ||--o{ RefreshTokens : "authenticates with"
+    Users ||--o{ StreakFreezes : "banks"
+    Users ||--o{ UserChallenges : "tackles"
+    Challenges ||--o{ UserChallenges : "tracked by"
 
     Users {
         Guid Id PK
@@ -24,6 +27,8 @@ erDiagram
         int LongestStreak
         decimal TotalDistanceKm
         int TotalRuns
+        int StreakFreezeCount
+        decimal WeeklyGoalKm
         DateTime CreatedAt
         DateTime UpdatedAt
     }
@@ -47,7 +52,7 @@ erDiagram
         string Name UK
         string Description
         string IconUrl
-        string Category "distance, streak, milestone, special"
+        string Category "distance, streak, milestone, special, challenge"
         string Rarity "common, rare, epic, legendary, heroic"
         string CriteriaJson "structured unlock condition"
         int PointsReward
@@ -61,6 +66,37 @@ erDiagram
         DateTime UnlockedAt
     }
 
+    StreakFreezes {
+        Guid Id PK
+        Guid UserId FK
+        string Type "earned or used"
+        string Source "points_purchase, streak_milestone, distance_milestone, auto_applied"
+        DateTime Date
+        DateTime CreatedAt
+    }
+
+    Challenges {
+        Guid Id PK
+        string Name UK
+        string Description
+        decimal TargetDistanceKm
+        string IconUrl
+        string Rarity
+        Guid BadgeId FK "nullable"
+        int SortOrder
+        DateTime CreatedAt
+    }
+
+    UserChallenges {
+        Guid Id PK
+        Guid UserId FK
+        Guid ChallengeId FK
+        decimal ProgressDistanceKm
+        bool IsActive
+        DateTime StartedAt
+        DateTime CompletedAt "nullable"
+    }
+
     RefreshTokens {
         Guid Id PK
         Guid UserId FK
@@ -71,6 +107,7 @@ erDiagram
         string ReplacedByTokenHash "nullable, for reuse detection"
     }
 ```
+
 
 ## Entity Details
 
