@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Compass, CheckCircle, Flag, MapPin, Award, ArrowRight, Trophy } from 'lucide-react'
+import { Compass, CheckCircle, Flag, MapPin, Award, ArrowRight, Trophy, AlertTriangle, X } from 'lucide-react'
 import challengesApi from '../api/challenges'
 import LoadingSpinner from '../components/ui/LoadingSpinner'
 import toast from 'react-hot-toast'
@@ -9,6 +9,7 @@ export default function ChallengesPage() {
   const [challenges, setChallenges] = useState<Challenge[]>([])
   const [loading, setLoading] = useState(true)
   const [startingId, setStartingId] = useState<string | null>(null)
+  const [pendingChallenge, setPendingChallenge] = useState<Challenge | null>(null)
 
   async function loadChallenges() {
     try {
@@ -25,11 +26,23 @@ export default function ChallengesPage() {
     loadChallenges()
   }, [])
 
-  async function handleStart(challengeId: string) {
+  const activeChallenge = challenges.find(c => c.isActive && !c.isCompleted)
+  const completedChallenges = challenges.filter(c => c.isCompleted)
+
+  function handleStartClick(challenge: Challenge) {
+    if (activeChallenge && activeChallenge.id !== challenge.id) {
+      setPendingChallenge(challenge)
+    } else {
+      executeStart(challenge.id)
+    }
+  }
+
+  async function executeStart(challengeId: string) {
     setStartingId(challengeId)
     try {
       await challengesApi.start(challengeId)
       toast.success('Route Challenge activated!')
+      setPendingChallenge(null)
       await loadChallenges()
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Failed to start challenge'
@@ -46,9 +59,6 @@ export default function ChallengesPage() {
       </div>
     )
   }
-
-  const activeChallenge = challenges.find(c => c.isActive && !c.isCompleted)
-  const completedChallenges = challenges.filter(c => c.isCompleted)
 
   return (
     <div className="page-container space-y-6 max-w-5xl mx-auto">
@@ -222,7 +232,7 @@ export default function ChallengesPage() {
                   <button
                     type="button"
                     disabled={startingId === c.id}
-                    onClick={() => handleStart(c.id)}
+                    onClick={() => handleStartClick(c)}
                     className="btn btn-secondary btn-sm text-xs"
                   >
                     {startingId === c.id ? (
@@ -237,6 +247,75 @@ export default function ChallengesPage() {
           )
         })}
       </div>
+
+      {/* Confirmation Modal when switching active challenge */}
+      {pendingChallenge && activeChallenge && (
+        <div className="fixed inset-0 z-50 bg-[hsl(var(--color-overlay))] backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+          <div className="card max-w-md w-full p-6 space-y-5 shadow-2xl border border-[hsl(var(--color-border))] bg-[hsl(var(--color-surface))] animate-fade-in-up relative">
+            <button
+              type="button"
+              onClick={() => setPendingChallenge(null)}
+              className="absolute top-4 right-4 text-[hsl(var(--color-text-muted))] hover:text-[hsl(var(--color-text))] p-1 rounded-lg transition-colors"
+            >
+              <X size={18} />
+            </button>
+
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center shrink-0 border border-amber-500/20">
+                <AlertTriangle size={24} />
+              </div>
+              <div className="space-y-1">
+                <h3 className="text-lg font-bold text-[hsl(var(--color-text))]">Switch Active Challenge?</h3>
+                <p className="text-xs text-[hsl(var(--color-text-muted))] leading-relaxed">
+                  Activating <span className="font-semibold text-[hsl(var(--color-text))]">{pendingChallenge.name}</span> will pause your current route.
+                </p>
+              </div>
+            </div>
+
+            {/* Current Active Route Card Summary */}
+            <div className="p-3.5 rounded-xl bg-[hsl(var(--color-surface-2))]/70 border border-[hsl(var(--color-border))]/50 space-y-2 text-xs">
+              <div className="flex items-center justify-between font-semibold">
+                <span className="text-[hsl(var(--color-text-muted))]">Currently Active:</span>
+                <span className="text-[hsl(var(--color-brand))] font-bold">{activeChallenge.name}</span>
+              </div>
+              <div className="flex items-center justify-between text-[11px] text-[hsl(var(--color-text-muted))]">
+                <span>Progress: {activeChallenge.progressDistanceKm} / {activeChallenge.targetDistanceKm} km</span>
+                <span>{activeChallenge.completionPercentage}%</span>
+              </div>
+              <div className="h-1.5 bg-[hsl(var(--color-surface-3))] rounded-full overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-[hsl(var(--color-brand))]"
+                  style={{ width: `${activeChallenge.completionPercentage}%` }}
+                />
+              </div>
+            </div>
+
+            <div className="pt-2 flex items-center justify-end gap-3 border-t border-[hsl(var(--color-border))]/40">
+              <button
+                type="button"
+                onClick={() => setPendingChallenge(null)}
+                disabled={startingId === pendingChallenge.id}
+                className="btn btn-secondary text-xs px-4"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => executeStart(pendingChallenge.id)}
+                disabled={startingId === pendingChallenge.id}
+                className="btn btn-fire text-xs px-4"
+              >
+                {startingId === pendingChallenge.id ? (
+                  <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  'Switch Route'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
+
