@@ -1,8 +1,8 @@
 # RunStreak — Project Plan (LIVE)
 
 > **Last updated:** 2026-07-28
-> **Current focus:** Pre-Submission Polish & Route Challenge Sprint
-> **Overall status:** ✅ Phase 0-8 complete, Phase 10 complete, Phase 11 complete
+> **Current focus:** Classic New Zealand & Auckland Hiking Trail Challenges
+> **Overall status:** ✅ Phase 0-8 complete, Phase 10 complete, Phase 11 complete, NZ Trail Challenges added
 
 
 This file is the single source of truth for what's done, what's in progress, and what's next. Agents must read it at the start of every session and update it at the end.
@@ -379,6 +379,7 @@ See ADR: `specs/decisions/011-solo-motivation-ux.md`.
   - [x] Dashboard weekly goal custom numeric input box
   - [x] Rest day ticket balance auto-recalculation fix on dashboard load
   - [x] Route Challenge Mode (`Challenge`, `UserChallenge`, `/challenges` page, active widget)
+  - [x] Classic New Zealand & Auckland Hiking Trails expansion (16 total challenges, including Rangitoto Summit, Auckland Coast to Coast, Waitākere Ranges, Milford Track, Routeburn, Abel Tasman, Kepler Track, and Te Araroa Trail) with themed Noto SVG icon rendering on cards and widgets
   - [x] Mock data seeding (20 users, 2-43km range, clear old test user, enriched `testuser` account)
   - [x] Scalar API documentation content & route completeness audit
 - [x] Final deployment verification & tests (36/36 backend tests pass, 18/18 frontend tests pass)

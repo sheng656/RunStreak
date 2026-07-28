@@ -51,7 +51,11 @@ export default function ActiveChallengeWidget() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2.5">
           <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[hsl(var(--color-brand))] to-indigo-600 text-white flex items-center justify-center shadow-sm shrink-0">
-            <Compass size={18} />
+            {activeChallenge.iconUrl ? (
+              <img src={activeChallenge.iconUrl} alt={activeChallenge.name} className="w-5 h-5 object-contain" />
+            ) : (
+              <Compass size={18} />
+            )}
           </div>
           <div>
             <div className="flex items-center gap-2">

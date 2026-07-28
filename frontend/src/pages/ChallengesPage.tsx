@@ -112,7 +112,11 @@ export default function ChallengesPage() {
             </div>
 
             <div className="flex flex-col items-center justify-center p-4 bg-[hsl(var(--color-surface-2))]/60 rounded-2xl border border-[hsl(var(--color-border))]/40 shrink-0 min-w-[160px]">
-              <Trophy size={28} className="text-amber-500 mb-1" />
+              {activeChallenge.iconUrl ? (
+                <img src={activeChallenge.iconUrl} alt={activeChallenge.name} className="w-8 h-8 object-contain mb-1" />
+              ) : (
+                <Trophy size={28} className="text-amber-500 mb-1" />
+              )}
               <span className="text-xs font-bold text-[hsl(var(--color-text))] text-center">Reward Badge</span>
               <span className="text-[10px] text-[hsl(var(--color-text-muted))] uppercase tracking-wider mt-0.5">{activeChallenge.rarity}</span>
             </div>
@@ -140,14 +144,25 @@ export default function ChallengesPage() {
               <div className="space-y-3">
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-center gap-3">
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-lg shrink-0 ${
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-lg shrink-0 relative ${
                       isCompleted
                         ? 'bg-emerald-500/10 text-emerald-400'
                         : isCurrentActive
                         ? 'bg-[hsl(var(--color-brand))]/10 text-[hsl(var(--color-brand))]'
                         : 'bg-[hsl(var(--color-surface-3))] text-[hsl(var(--color-text-muted))]'
                     }`}>
-                      {isCompleted ? <CheckCircle size={20} /> : <MapPin size={20} />}
+                      {c.iconUrl ? (
+                        <img src={c.iconUrl} alt={c.name} className="w-6 h-6 object-contain" />
+                      ) : isCompleted ? (
+                        <CheckCircle size={20} />
+                      ) : (
+                        <MapPin size={20} />
+                      )}
+                      {isCompleted && c.iconUrl && (
+                        <div className="absolute -bottom-1 -right-1 bg-emerald-500 text-white rounded-full p-0.5 shadow">
+                          <CheckCircle size={10} />
+                        </div>
+                      )}
                     </div>
                     <div>
                       <h3 className="font-bold text-[hsl(var(--color-text))] text-base flex items-center gap-2">

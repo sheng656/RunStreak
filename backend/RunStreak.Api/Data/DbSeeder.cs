@@ -14,6 +14,9 @@ public static class DbSeeder
     // Bump this when adding new badges so the re-seed trigger fires.
     private const int ExpectedBadgeCount = 48;
 
+    // Bump this when adding new challenges so the re-seed trigger fires.
+    private const int ExpectedChallengeCount = 16;
+
     public static async Task SeedBadgesAsync(AppDbContext context)
     {
         var currentCount = await context.Badges.CountAsync();
@@ -411,9 +414,18 @@ public static class DbSeeder
 
     public static async Task SeedChallengesAsync(AppDbContext context)
     {
-        if (await context.Challenges.AnyAsync())
+        var currentCount = await context.Challenges.CountAsync();
+        if (currentCount == ExpectedChallengeCount)
         {
-            return; // Already seeded
+            return; // Already seeded with the correct set
+        }
+
+        // Wipe existing challenges & user progress when challenge set expands
+        if (currentCount > 0)
+        {
+            context.UserChallenges.RemoveRange(context.UserChallenges);
+            context.Challenges.RemoveRange(context.Challenges);
+            await context.SaveChangesAsync();
         }
 
         var challenges = new List<Challenge>
@@ -423,9 +435,18 @@ public static class DbSeeder
                 Name = "Park Run Challenge",
                 Description = "Complete a cumulative 5km distance. Perfect for getting started!",
                 TargetDistanceKm = 5.0m,
-                IconUrl = "https://api.iconify.design/noto/running-shoe.svg",
+                IconUrl = "https://api.iconify.design/noto/deciduous-tree.svg",
                 Rarity = "common",
                 SortOrder = 1
+            },
+            new()
+            {
+                Name = "Rangitoto Summit Track",
+                Description = "Conquer Auckland's iconic volcanic island hike across lava fields to the summit (8km).",
+                TargetDistanceKm = 8.0m,
+                IconUrl = "https://api.iconify.design/noto/volcano.svg",
+                Rarity = "common",
+                SortOrder = 2
             },
             new()
             {
@@ -434,7 +455,16 @@ public static class DbSeeder
                 TargetDistanceKm = 10.0m,
                 IconUrl = "https://api.iconify.design/noto/cityscape.svg",
                 Rarity = "common",
-                SortOrder = 2
+                SortOrder = 3
+            },
+            new()
+            {
+                Name = "Auckland Coast to Coast Walkway",
+                Description = "Traverse Auckland from the Waitematā Harbour to the Manukau Harbour (16km).",
+                TargetDistanceKm = 16.0m,
+                IconUrl = "https://api.iconify.design/noto/bridge-at-night.svg",
+                Rarity = "common",
+                SortOrder = 4
             },
             new()
             {
@@ -443,52 +473,106 @@ public static class DbSeeder
                 TargetDistanceKm = 21.1m,
                 IconUrl = "https://api.iconify.design/noto/sports-medal.svg",
                 Rarity = "rare",
-                SortOrder = 3
+                SortOrder = 5
+            },
+            new()
+            {
+                Name = "Waitākere Ranges Loop",
+                Description = "Explore 25km of lush rainforest and coastal views in Auckland's western ranges.",
+                TargetDistanceKm = 25.0m,
+                IconUrl = "https://api.iconify.design/noto/national-park.svg",
+                Rarity = "rare",
+                SortOrder = 6
+            },
+            new()
+            {
+                Name = "Routeburn Track",
+                Description = "Conquer 32km of world-famous alpine crossing between Mt Aspiring and Fiordland.",
+                TargetDistanceKm = 32.0m,
+                IconUrl = "https://api.iconify.design/noto/evergreen-tree.svg",
+                Rarity = "rare",
+                SortOrder = 7
             },
             new()
             {
                 Name = "Marathon Expedition",
                 Description = "Accumulate 42.2km total. The classic marathon distance broken into your daily runs.",
                 TargetDistanceKm = 42.2m,
-                IconUrl = "https://api.iconify.design/noto/trophy.svg",
+                IconUrl = "https://api.iconify.design/noto/person-running.svg",
                 Rarity = "rare",
-                SortOrder = 4
+                SortOrder = 8
+            },
+            new()
+            {
+                Name = "Milford Track",
+                Description = "Tackle 53.5km inspired by New Zealand's 'finest walk in the world' through Fiordland.",
+                TargetDistanceKm = 53.5m,
+                IconUrl = "https://api.iconify.design/noto/mountain.svg",
+                Rarity = "epic",
+                SortOrder = 9
+            },
+            new()
+            {
+                Name = "Abel Tasman Coast Track",
+                Description = "Run 60km along golden beaches and turquoise lagoons at the top of the South Island.",
+                TargetDistanceKm = 60.0m,
+                IconUrl = "https://api.iconify.design/noto/palm-tree.svg",
+                Rarity = "epic",
+                SortOrder = 10
+            },
+            new()
+            {
+                Name = "Kepler Track",
+                Description = "A panoramic 60km loop through beech forests and ridge-top alpine tussock.",
+                TargetDistanceKm = 60.0m,
+                IconUrl = "https://api.iconify.design/noto/sunrise-over-mountains.svg",
+                Rarity = "epic",
+                SortOrder = 11
             },
             new()
             {
                 Name = "Coast to Coast",
                 Description = "Run 100km cumulatively to cross the country from sea to sea.",
                 TargetDistanceKm = 100.0m,
-                IconUrl = "https://api.iconify.design/noto/beach-with-umbrella.svg",
+                IconUrl = "https://api.iconify.design/noto/water-wave.svg",
                 Rarity = "epic",
-                SortOrder = 5
+                SortOrder = 12
             },
             new()
             {
                 Name = "Tongariro Crossing",
-                Description = "Conquer 150km of volcanic terrain inspired by New Zealand's alpine trail.",
+                Description = "Conquer 150km of volcanic terrain inspired by New Zealand's famous alpine crossing.",
                 TargetDistanceKm = 150.0m,
                 IconUrl = "https://api.iconify.design/noto/volcano.svg",
                 Rarity = "epic",
-                SortOrder = 6
+                SortOrder = 13
             },
             new()
             {
                 Name = "Tour de New Zealand",
                 Description = "A monumental 300km journey across the North and South islands.",
                 TargetDistanceKm = 300.0m,
-                IconUrl = "https://api.iconify.design/noto/world-map.svg",
+                IconUrl = "https://api.iconify.design/noto/flag-new-zealand.svg",
                 Rarity = "legendary",
-                SortOrder = 7
+                SortOrder = 14
             },
             new()
             {
                 Name = "Trans-Alpine Expedition",
                 Description = "The ultimate 500km ultra-endurance challenge. For true legends.",
                 TargetDistanceKm = 500.0m,
-                IconUrl = "https://api.iconify.design/noto/mountain.svg",
+                IconUrl = "https://api.iconify.design/noto/snow-capped-mountain.svg",
                 Rarity = "heroic",
-                SortOrder = 8
+                SortOrder = 15
+            },
+            new()
+            {
+                Name = "Te Araroa Trail",
+                Description = "The ultimate 3,000km epic expedition spanning the entire length of New Zealand from Cape Reinga to Bluff.",
+                TargetDistanceKm = 3000.0m,
+                IconUrl = "https://api.iconify.design/noto/globe-showing-asia-australia.svg",
+                Rarity = "heroic",
+                SortOrder = 16
             }
         };
 
