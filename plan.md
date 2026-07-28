@@ -1,8 +1,8 @@
 # RunStreak — Project Plan (LIVE)
 
 > **Last updated:** 2026-07-28
-> **Current focus:** Rolling-Window Demo Data Auto-Refresh
-> **Overall status:** ✅ Phase 0-8 complete, Phase 10 complete, Phase 11 complete, Rolling Demo Auto-Refresh added
+> **Current focus:** Editable Running Logs on Run History Page
+> **Overall status:** ✅ Phase 0-8 complete, Phase 10 complete, Phase 11 complete, Editable Running Logs added
 
 
 This file is the single source of truth for what's done, what's in progress, and what's next. Agents must read it at the start of every session and update it at the end.
@@ -381,6 +381,7 @@ See ADR: `specs/decisions/011-solo-motivation-ux.md`.
   - [x] Route Challenge Mode (`Challenge`, `UserChallenge`, `/challenges` page, active widget)
   - [x] Classic New Zealand & Auckland Hiking Trails expansion (16 total challenges, including Rangitoto Summit, Auckland Coast to Coast, Waitākere Ranges, Milford Track, Routeburn, Abel Tasman, Kepler Track, and Te Araroa Trail) with themed Noto SVG icon rendering on cards and widgets
   - [x] Mock data seeding & rolling-window auto-refresh (20 users, 2-43km range, clear old test user, enriched `testuser` account, auto-refreshed relative to `DateTime.UtcNow.Date` on cold start via EF Core `ExecuteDeleteAsync` + `SemaphoreSlim` lock)
+  - [x] Editable running logs on Run History page (`EditRunModal.tsx` reusing `LogRunPage` inputs, RPE effort picker, live pace calculation, and backend `PUT /api/runs/{id}` endpoint)
   - [x] Scalar API documentation content & route completeness audit
 - [x] Final deployment verification & tests (36/36 backend tests pass, 18/18 frontend tests pass)
 

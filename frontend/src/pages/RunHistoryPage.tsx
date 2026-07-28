@@ -1,11 +1,12 @@
 import { useEffect, useState, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { MapPin, Timer, Zap, Plus, ChevronLeft, ChevronRight,
-  Calendar, Trash2,
+  Calendar, Trash2, Pencil,
 } from 'lucide-react'
 import runsApi from '../api/runs'
 import LoadingSpinner from '../components/ui/LoadingSpinner'
 import EmptyState from '../components/ui/EmptyState'
+import EditRunModal from '../components/runs/EditRunModal'
 import toast from 'react-hot-toast'
 import type { Run } from '../types/api'
 import { formatPace } from '../utils/formatPace'
@@ -17,6 +18,7 @@ export default function RunHistoryPage() {
   const [loading, setLoading] = useState(true)
   const [deleting, setDeleting] = useState<string | null>(null)
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
+  const [editingRun, setEditingRun] = useState<Run | null>(null)
   const pageSize = 10
   const totalPages = Math.ceil(totalCount / pageSize)
 
@@ -156,13 +158,22 @@ export default function RunHistoryPage() {
                         </button>
                       </div>
                     ) : (
-                      <button
-                        onClick={() => setDeleteConfirm(run.id)}
-                        className="btn btn-ghost btn-icon text-[hsl(var(--color-text-muted))] hover:text-[hsl(var(--color-danger))]"
-                        title="Delete run"
-                      >
-                        <Trash2 size={16} />
-                      </button>
+                      <>
+                        <button
+                          onClick={() => setEditingRun(run)}
+                          className="btn btn-ghost btn-icon text-[hsl(var(--color-text-muted))] hover:text-[hsl(var(--color-brand))]"
+                          title="Edit run"
+                        >
+                          <Pencil size={16} />
+                        </button>
+                        <button
+                          onClick={() => setDeleteConfirm(run.id)}
+                          className="btn btn-ghost btn-icon text-[hsl(var(--color-text-muted))] hover:text-[hsl(var(--color-danger))]"
+                          title="Delete run"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </>
                     )}
                   </div>
                 </div>
@@ -204,6 +215,18 @@ export default function RunHistoryPage() {
             </div>
           )}
         </>
+      )}
+
+      {/* Edit Run Modal */}
+      {editingRun && (
+        <EditRunModal
+          run={editingRun}
+          onClose={() => setEditingRun(null)}
+          onSuccess={() => {
+            setEditingRun(null)
+            loadRuns()
+          }}
+        />
       )}
     </div>
   )
