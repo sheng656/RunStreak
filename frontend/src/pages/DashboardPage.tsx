@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
   Flame, Trophy, MapPin, TrendingUp, Plus,
-  Medal, Zap, CalendarDays, Shield,
+  Medal, Zap, CalendarDays, Shield, Info, X, AlertCircle,
 } from 'lucide-react'
 import { useAuthStore } from '../stores/authStore'
 import { useGamificationStore } from '../stores/gamificationStore'
@@ -31,8 +31,9 @@ export default function DashboardPage() {
   const [badgesWithProgress, setBadgesWithProgress] = useState<BadgeWithProgress[]>([])
   const [loading, setLoading] = useState(true)
   const [purchasing, setPurchasing] = useState(false)
+  const [showPurchaseConfirm, setShowPurchaseConfirm] = useState(false)
 
-  async function handlePurchaseFreeze() {
+  async function confirmPurchaseFreeze() {
     if (!user) return
     setPurchasing(true)
     try {
@@ -43,6 +44,7 @@ export default function DashboardPage() {
         streakFreezeCount: res.data.streakFreezeCount,
         totalPoints: res.data.totalPoints,
       })
+      setShowPurchaseConfirm(false)
     } catch (err: unknown) {
       const msg =
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||

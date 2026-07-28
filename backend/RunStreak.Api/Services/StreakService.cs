@@ -21,6 +21,10 @@ public class StreakService(AppDbContext context) : IStreakService
             .Select(r => r.RunDate)
             .ToListAsync();
 
+        var earnedFreezes = await _context.StreakFreezes
+            .Where(sf => sf.UserId == userId && sf.Type == "earned")
+            .ToListAsync();
+
         var usedFreezes = await _context.StreakFreezes
             .Where(sf => sf.UserId == userId && sf.Type == "used")
             .ToListAsync();
@@ -38,6 +42,16 @@ public class StreakService(AppDbContext context) : IStreakService
         if (activeDates.Count == 0)
         {
             return new StreakResult { CurrentStreak = 0, LongestStreak = 0 };
+        }
+
+        int newlyAppliedCount = 0;
+
+        // Function to check if an advance-purchased ticket was available on or before candidate freeze date
+        bool CanCoverRestDay(DateTime freezeDate)
+        {
+            int totalEarnedUpToDate = earnedFreezes.Count(sf => sf.Date.Date <= freezeDate.Date);
+            int totalUsedUpToDate = usedFreezeDates.Count(d => d <= freezeDate.Date) + newlyAppliedCount;
+            return (totalEarnedUpToDate - totalUsedUpToDate) > 0;
         }
 
         // 3. Scan for gaps of exactly 1 day and auto-apply freezes if available
@@ -60,6 +74,11 @@ public class StreakService(AppDbContext context) : IStreakService
                     for (int g = 1; g <= gapDays; g++)
                     {
                         var freezeDate = prev.AddDays(g);
+                        if (!CanCoverRestDay(freezeDate))
+                        {
+                            break; // Cannot cover past rest day if ticket was not purchased in advance
+                        }
+
                         var newFreeze = new StreakFreeze
                         {
                             UserId = userId,
@@ -69,6 +88,7 @@ public class StreakService(AppDbContext context) : IStreakService
                         };
                         _context.StreakFreezes.Add(newFreeze);
                         user.StreakFreezeCount--;
+                        newlyAppliedCount++;
                         changesMade = true;
                     }
                 }
@@ -83,6 +103,11 @@ public class StreakService(AppDbContext context) : IStreakService
                     for (int g = 1; g <= gapDays; g++)
                     {
                         var freezeDate = lastActiveDate.AddDays(g);
+                        if (!CanCoverRestDay(freezeDate))
+                        {
+                            break; // Cannot cover past rest day if ticket was not purchased in advance
+                        }
+
                         var newFreeze = new StreakFreeze
                         {
                             UserId = userId,
@@ -92,6 +117,7 @@ public class StreakService(AppDbContext context) : IStreakService
                         };
                         _context.StreakFreezes.Add(newFreeze);
                         user.StreakFreezeCount--;
+                        newlyAppliedCount++;
                         changesMade = true;
                     }
                 }
