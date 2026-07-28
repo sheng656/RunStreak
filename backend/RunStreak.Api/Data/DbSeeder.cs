@@ -597,14 +597,19 @@ public static class DbSeeder
     {
         var baseDate = DateTime.UtcNow.Date;
 
-        // Check if demo data is fresh (most recent run by any demo user is today or yesterday)
+        // Check if demo data is complete and fresh (all 20 demo users exist and most recent run is today/yesterday)
+        var demoUserCount = await context.Users.CountAsync(u => DemoUsernames.Contains(u.Username));
         var newestDemoRunDate = await context.Runs
             .Where(r => DemoUsernames.Contains(r.User.Username))
             .MaxAsync(r => (DateTime?)r.RunDate);
 
-        if (newestDemoRunDate.HasValue && newestDemoRunDate.Value.Date >= baseDate.AddDays(-1))
+        bool isFreshAndComplete = demoUserCount == DemoUsernames.Count
+            && newestDemoRunDate.HasValue
+            && newestDemoRunDate.Value.Date >= baseDate.AddDays(-1);
+
+        if (isFreshAndComplete)
         {
-            return; // Demo data is up to date relative to today
+            return; // Demo data is complete and up to date relative to today
         }
 
         // Bulk-delete existing demo users (cascades Runs, UserBadges, RefreshTokens, StreakFreezes, UserChallenges)

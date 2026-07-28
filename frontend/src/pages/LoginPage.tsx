@@ -18,8 +18,7 @@ export default function LoginPage() {
 
   function validate(): boolean {
     const errs: Record<string, string> = {}
-    if (!email.trim()) errs.email = 'Email is required'
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errs.email = 'Invalid email format'
+    if (!email.trim()) errs.email = 'Email or Username is required'
     if (!password) errs.password = 'Password is required'
     setErrors(errs)
     return Object.keys(errs).length === 0
@@ -31,7 +30,7 @@ export default function LoginPage() {
 
     setSubmitting(true)
     try {
-      const res = await authApi.login({ email, password })
+      const res = await authApi.login({ email: email.trim(), password })
       setStoredRefreshToken(res.data.refreshToken)
       setAccessToken(res.data.accessToken)
       setUser(res.data.user)
@@ -64,19 +63,19 @@ export default function LoginPage() {
 
         {/* Login form */}
         <form onSubmit={handleSubmit} className="card p-6 space-y-4">
-          {/* Email */}
+          {/* Email or Username */}
           <div>
-            <label htmlFor="login-email" className="label">Email</label>
+            <label htmlFor="login-email" className="label">Email or Username</label>
             <div className="relative">
               <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[hsl(var(--color-text-muted))]" />
               <input
                 id="login-email"
-                type="email"
+                type="text"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.com"
+                placeholder="test@runstreak.app or testuser"
                 className={`input pl-9 ${errors.email ? 'input-error' : ''}`}
-                autoComplete="email"
+                autoComplete="username"
               />
             </div>
             {errors.email && <p className="error-text">{errors.email}</p>}

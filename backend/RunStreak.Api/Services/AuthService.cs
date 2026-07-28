@@ -89,7 +89,8 @@ public class AuthService : IAuthService
 
     public async Task<AuthResult?> LoginAsync(LoginRequest request)
     {
-        var user = await _context.Users.FirstOrDefaultAsync(u => u.Email.ToLower() == request.Email.ToLower());
+        var identifier = request.Email.Trim().ToLower();
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.Email.ToLower() == identifier || u.Username.ToLower() == identifier);
         if (user == null)
         {
             return null; // Invalid credentials
