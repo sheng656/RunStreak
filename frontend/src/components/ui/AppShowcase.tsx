@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Flame, Trophy, MapPin, Zap, Award, ChevronLeft, ChevronRight } from 'lucide-react'
 
 interface ShowcaseSlide {
@@ -8,7 +8,7 @@ interface ShowcaseSlide {
   tag: string
   icon: React.ReactNode
   color: string
-  // Stylized preview layout inside phone frame
+  accentColor: string
   renderContent: () => React.ReactNode
 }
 
@@ -18,8 +18,9 @@ const SHOWCASE_SLIDES: ShowcaseSlide[] = [
     title: 'Track Streaks & Progress',
     subtitle: 'Daily habit building with streak freezes, weekly goals, and insights',
     tag: 'Dashboard',
-    icon: <Flame className="text-orange-400" size={18} />,
+    icon: <Flame className="text-orange-400" size={16} />,
     color: 'from-orange-500/20 to-amber-500/10 border-orange-500/30',
+    accentColor: 'hsl(25 95% 53%)',
     renderContent: () => (
       <div className="space-y-3 text-left">
         <div className="p-3.5 rounded-xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-between">
@@ -60,11 +61,12 @@ const SHOWCASE_SLIDES: ShowcaseSlide[] = [
   },
   {
     id: 'import',
-    title: 'AI Screenshot OCR Import',
-    subtitle: 'Import runs automatically from Strava, Nike Run Club, or Garmin screenshots',
+    title: 'AI Screenshot Import',
+    subtitle: 'Import runs from Strava, Nike Run Club, or Garmin via OCR',
     tag: 'Smart Import',
-    icon: <Zap className="text-cyan-400" size={18} />,
+    icon: <Zap className="text-cyan-400" size={16} />,
     color: 'from-cyan-500/20 to-blue-500/10 border-cyan-500/30',
+    accentColor: 'hsl(189 94% 43%)',
     renderContent: () => (
       <div className="space-y-3 text-left">
         <div className="p-3 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center gap-2.5">
@@ -101,10 +103,11 @@ const SHOWCASE_SLIDES: ShowcaseSlide[] = [
   {
     id: 'badges',
     title: '48 Unlockable Badges',
-    subtitle: 'Earn rare, epic, and legendary achievements as you conquer milestones',
+    subtitle: 'Earn rare, epic, and legendary achievements at every milestone',
     tag: 'Gamification',
-    icon: <Award className="text-purple-400" size={18} />,
+    icon: <Award className="text-purple-400" size={16} />,
     color: 'from-purple-500/20 to-pink-500/10 border-purple-500/30',
+    accentColor: 'hsl(270 80% 65%)',
     renderContent: () => (
       <div className="space-y-2 text-left">
         <div className="grid grid-cols-2 gap-2">
@@ -148,8 +151,9 @@ const SHOWCASE_SLIDES: ShowcaseSlide[] = [
     title: 'NZ Route Challenges',
     subtitle: 'Virtually conquer Auckland trails, Rangitoto, and Te Araroa routes',
     tag: 'Trail Explorer',
-    icon: <MapPin className="text-emerald-400" size={18} />,
+    icon: <MapPin className="text-emerald-400" size={16} />,
     color: 'from-emerald-500/20 to-teal-500/10 border-emerald-500/30',
+    accentColor: 'hsl(160 71% 45%)',
     renderContent: () => (
       <div className="space-y-3 text-left">
         <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 space-y-2">
@@ -176,10 +180,11 @@ const SHOWCASE_SLIDES: ShowcaseSlide[] = [
   {
     id: 'leaderboard',
     title: 'Global Leaderboard',
-    subtitle: 'Compete for top positions with weekly and all-time rankings',
+    subtitle: 'Compete for the top with weekly and all-time rankings',
     tag: 'Leaderboard',
-    icon: <Trophy className="text-yellow-400" size={18} />,
+    icon: <Trophy className="text-yellow-400" size={16} />,
     color: 'from-yellow-500/20 to-amber-500/10 border-yellow-500/30',
+    accentColor: 'hsl(45 93% 47%)',
     renderContent: () => (
       <div className="space-y-2 text-left">
         <div className="p-2.5 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-between text-xs">
@@ -208,54 +213,135 @@ const SHOWCASE_SLIDES: ShowcaseSlide[] = [
   },
 ]
 
-export default function AppShowcase() {
+interface AppShowcaseProps {
+  /** Show in compact mode for mobile (no floating animation, tighter layout) */
+  compact?: boolean
+}
+
+export default function AppShowcase({ compact = false }: AppShowcaseProps) {
   const [currentIndex, setCurrentIndex] = useState(0)
+  const [animating, setAnimating] = useState(false)
+  const [direction, setDirection] = useState<'next' | 'prev'>('next')
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  // Start or restart the auto-advance timer
+  function startTimer() {
+    if (timerRef.current) clearInterval(timerRef.current)
+    timerRef.current = setInterval(() => {
+      goTo('next')
+    }, 4500)
+  }
 
   useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % SHOWCASE_SLIDES.length)
-    }, 4500)
-    return () => clearInterval(timer)
+    startTimer()
+    return () => { if (timerRef.current) clearInterval(timerRef.current) }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  function goTo(dir: 'next' | 'prev', targetIndex?: number) {
+    if (animating) return
+    setAnimating(true)
+    setDirection(dir)
+    setTimeout(() => {
+      setCurrentIndex((prev) => {
+        if (targetIndex !== undefined) return targetIndex
+        if (dir === 'next') return (prev + 1) % SHOWCASE_SLIDES.length
+        return (prev - 1 + SHOWCASE_SLIDES.length) % SHOWCASE_SLIDES.length
+      })
+      setAnimating(false)
+    }, 300)
+  }
+
+  function handleNext() {
+    goTo('next')
+    startTimer()
+  }
+  function handlePrev() {
+    goTo('prev')
+    startTimer()
+  }
+  function handleDot(idx: number) {
+    if (idx === currentIndex) return
+    goTo(idx > currentIndex ? 'next' : 'prev', idx)
+    startTimer()
+  }
 
   const currentSlide = SHOWCASE_SLIDES[currentIndex]
 
+  // Slide transition CSS
+  const slideStyle: React.CSSProperties = {
+    opacity: animating ? 0 : 1,
+    transform: animating
+      ? direction === 'next'
+        ? 'translateY(8px) scale(0.98)'
+        : 'translateY(-8px) scale(0.98)'
+      : 'translateY(0) scale(1)',
+    transition: 'opacity 0.3s ease, transform 0.3s ease',
+  }
+
   return (
-    <div className="relative w-full max-w-md mx-auto flex flex-col items-center">
-      {/* Slide Badge Tag */}
-      <div className="mb-4 inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-800/90 border border-slate-700 text-xs font-semibold text-slate-300 shadow-md">
+    <div className={`relative w-full max-w-xs mx-auto flex flex-col items-center ${compact ? '' : 'py-4'}`}>
+      {/* Feature tag pill */}
+      <div
+        className="mb-4 inline-flex items-center gap-1.5 px-3 py-1 rounded-full border text-xs font-semibold shadow-md transition-all duration-500"
+        style={{
+          background: `${currentSlide.accentColor}18`,
+          borderColor: `${currentSlide.accentColor}40`,
+          color: currentSlide.accentColor,
+        }}
+      >
         {currentSlide.icon}
         <span>{currentSlide.tag}</span>
       </div>
 
-      {/* Phone Frame Mockup */}
-      <div className="relative w-[280px] sm:w-[310px] rounded-[36px] bg-slate-900 border-[6px] border-slate-800 shadow-2xl overflow-hidden p-4 space-y-4 transition-all duration-500">
-        {/* Notch / Camera Island */}
-        <div className="w-24 h-4 bg-slate-800 rounded-full mx-auto mb-2 opacity-80" />
+      {/* Phone frame — floats gently when not compact */}
+      <div
+        className={`relative ${compact ? '' : 'animate-phone-float'}`}
+        style={{
+          filter: compact ? 'none' : 'drop-shadow(0 24px 40px rgba(0,0,0,0.45))',
+        }}
+      >
+        {/* Glow behind phone */}
+        {!compact && (
+          <div
+            className="absolute inset-0 rounded-[36px] blur-2xl opacity-25 pointer-events-none transition-colors duration-500"
+            style={{ background: currentSlide.accentColor, transform: 'scale(0.85) translateY(8px)' }}
+          />
+        )}
 
-        {/* Content area */}
-        <div className={`p-4 rounded-2xl bg-gradient-to-br ${currentSlide.color} border transition-all duration-500`}>
-          <div className="text-center mb-3">
-            <h3 className="text-base font-bold text-white">{currentSlide.title}</h3>
-            <p className="text-[11px] text-slate-400 mt-0.5">{currentSlide.subtitle}</p>
+        {/* Phone frame */}
+        <div className="relative w-[260px] sm:w-[290px] rounded-[36px] bg-slate-900 border-[5px] border-slate-700/80 overflow-hidden p-4 space-y-3">
+          {/* Dynamic island / notch */}
+          <div className="w-20 h-[14px] bg-slate-800 rounded-full mx-auto mb-1 flex items-center justify-center gap-1.5">
+            <div className="w-1.5 h-1.5 rounded-full bg-slate-600" />
+            <div className="w-2.5 h-2.5 rounded-full bg-slate-700 border border-slate-600" />
           </div>
 
-          {currentSlide.renderContent()}
-        </div>
+          {/* Slide content with crossfade */}
+          <div style={slideStyle}>
+            <div className={`p-3.5 rounded-2xl bg-gradient-to-br ${currentSlide.color} border`}>
+              <div className="text-center mb-3">
+                <h3 className="text-sm font-bold text-white leading-snug">{currentSlide.title}</h3>
+                <p className="text-[10px] text-slate-400 mt-0.5 leading-relaxed">{currentSlide.subtitle}</p>
+              </div>
+              {currentSlide.renderContent()}
+            </div>
+          </div>
 
-        {/* Bottom Phone Bar indicator */}
-        <div className="w-28 h-1 bg-slate-700 rounded-full mx-auto mt-2" />
+          {/* Home bar */}
+          <div className="w-24 h-1 bg-slate-700 rounded-full mx-auto mt-1" />
+        </div>
       </div>
 
-      {/* Controls / Dots */}
-      <div className="flex items-center justify-between w-full max-w-[280px] mt-6">
+      {/* Navigation controls */}
+      <div className="flex items-center justify-between w-full max-w-[260px] mt-5">
         <button
           type="button"
-          onClick={() => setCurrentIndex((prev) => (prev - 1 + SHOWCASE_SLIDES.length) % SHOWCASE_SLIDES.length)}
-          className="p-1.5 rounded-full bg-slate-800/60 hover:bg-slate-800 text-slate-400 hover:text-white transition-colors"
+          onClick={handlePrev}
+          className="p-1.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-slate-400 hover:text-white transition-all"
           aria-label="Previous slide"
         >
-          <ChevronLeft size={18} />
+          <ChevronLeft size={16} />
         </button>
 
         <div className="flex items-center gap-2">
@@ -263,9 +349,10 @@ export default function AppShowcase() {
             <button
               key={slide.id}
               type="button"
-              onClick={() => setCurrentIndex(idx)}
+              onClick={() => handleDot(idx)}
+              style={idx === currentIndex ? { background: currentSlide.accentColor } : undefined}
               className={`h-2 rounded-full transition-all duration-300 cursor-pointer ${
-                idx === currentIndex ? 'w-6 bg-[hsl(var(--color-brand))]' : 'w-2 bg-slate-700 hover:bg-slate-600'
+                idx === currentIndex ? 'w-6' : 'w-2 bg-slate-700 hover:bg-slate-500'
               }`}
               aria-label={`Go to slide ${idx + 1}`}
             />
@@ -274,11 +361,11 @@ export default function AppShowcase() {
 
         <button
           type="button"
-          onClick={() => setCurrentIndex((prev) => (prev + 1) % SHOWCASE_SLIDES.length)}
-          className="p-1.5 rounded-full bg-slate-800/60 hover:bg-slate-800 text-slate-400 hover:text-white transition-colors"
+          onClick={handleNext}
+          className="p-1.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-slate-400 hover:text-white transition-all"
           aria-label="Next slide"
         >
-          <ChevronRight size={18} />
+          <ChevronRight size={16} />
         </button>
       </div>
     </div>

@@ -1,8 +1,8 @@
 # RunStreak — Project Plan (LIVE)
 
 > **Last updated:** 2026-07-29
-> **Current focus:** Phase 12 — Shareable Cards, Password Reset (Resend), Demo UX & Showcase
-> **Overall status:** ✅ Phase 0-8 complete, Phase 10 complete, Phase 11 complete, Phase 12 complete
+> **Current focus:** Phase 13 — Landing Page UI/UX Overhaul (DONE)
+> **Overall status:** ✅ Phase 0-8 complete, Phase 10 complete, Phase 11 complete, Phase 12 complete, Phase 13 complete
 
 
 This file is the single source of truth for what's done, what's in progress, and what's next. Agents must read it at the start of every session and update it at the end.
@@ -426,3 +426,28 @@ Phase 0 (scaffold)
 | 12 | Visual Avatar Picker using 14 styles, 300+ seeds and DiceBear HTTP API | Decided | `specs/decisions/010-avatar-picker-dicebear.md` |
 | 13 | Shareable Brag Cards (Canvas API, OpenGraph 1200x630, QR Code) | Decided | `specs/decisions/013-shareable-brag-cards.md` |
 | 14 | Password Reset Flow & Resend REST Email Integration | Decided | `specs/decisions/014-password-reset-resend.md` |
+| 15 | Landing Page UI/UX Overhaul (glassmorphism, animated orbs, floating phone, mobile stacking) | Decided | See prompt log `2026-07-29-landing-page-uiux-overhaul.md` |
+
+---
+
+## Phase 13 — Landing Page UI/UX Overhaul
+
+**Goal:** Elevate the aesthetic appeal of the unauthenticated landing page.
+
+- [x] Animated gradient orb background (`orbDrift` / `orbDriftSlow` — 18 s / 24 s ease-in-out, no stutter)
+- [x] Glassmorphic login form card (`backdrop-blur(12px)`, `bg-surface/85` token)
+- [x] `AppShowcase.tsx` full rewrite:
+  - Per-slide accent colour applied to pill tag, dot nav, and glow behind phone frame
+  - Smooth crossfade + translateY transition (300 ms) between slides
+  - `animate-phone-float` (4 s, gentle 10 px vertical oscillation) on desktop
+  - `compact` prop for mobile use (no float / no glow, tighter layout)
+- [x] Responsive mobile layout: `AppShowcase compact` stacked above the form on `< md`
+- [x] Desktop left column: hero tagline + full `AppShowcase`
+- [x] MSA Demo Card redesigned:
+  - Separate username + password rows with copy-to-clipboard buttons
+  - ⚡ Auto-fill button + 🔄 Reset button with glassmorphic styling
+  - Animated chevron rotation on collapse/expand
+- [x] CSS additions: `phoneFloat`, `orbDrift`, `orbDriftSlow` keyframes + utility classes
+- [x] Theme support verified: all surfaces use `hsl(var(--color-*))` tokens; adapts to both light and dark
+- [x] Build verified: `npm run build` — 0 errors, 0 warnings
+- [x] Prompt log written: `specs/prompts/2026-07-29-landing-page-uiux-overhaul.md`
