@@ -128,5 +128,14 @@ The homepage is fully theme-aware:
 - [`frontend/src/components/ui/WeeklyProgress.tsx`](file:///d:/App/RunStreak/frontend/src/components/ui/WeeklyProgress.tsx):
   - Made goal setting form responsive (`w-full sm:w-auto sm:ml-auto`) to prevent input fields from overflowing card boundaries on mobile screens.
 
+---
 
+## Follow-up Prompt 8 — Unclipped Landing Showcase & Sign-In Modal
 
+> Please optimize the layout. Currently in the logged-out state, the screenshots at the top of the mobile view are being cut off. Also, to prevent the input fields from failing to fit on the same screen, we can redesign this so that clicking the "Start Now" button triggers a modal/popup for the login form.
+
+*Agent produced:*
+- [`frontend/src/pages/LoginPage.tsx`](file:///d:/App/RunStreak/frontend/src/pages/LoginPage.tsx):
+  - **Removed Height Truncation:** Removed the restrictive `h-72 overflow-hidden` container around `AppShowcase` on mobile so screenshot previews display completely in full height without any top/bottom clipping.
+  - **Hero Landing Layout:** Created a hero layout with brand header, tagline ("Run. Earn. Dominate."), description, and prominent CTA buttons ("Start Now" and "MSA Marker Demo").
+  - **Glassmorphic Sign-In Modal:** Clicking **"Start Now"** or **"Sign In"** triggers a glassmorphic modal dialog (`backdrop-blur-md`, `bg-slate-900/95`, close button) containing the sign-in form and MSA Marker demo card with one-click auto-fill.
