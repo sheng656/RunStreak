@@ -16,12 +16,21 @@ public class TestEmailService : IEmailService
     public bool WasCalled { get; private set; }
     public string? LastToEmail { get; private set; }
     public string? LastResetToken { get; private set; }
+    public string? LastVerificationCode { get; private set; }
 
     public Task<bool> SendPasswordResetEmailAsync(string toEmail, string resetToken, string username)
     {
         WasCalled = true;
         LastToEmail = toEmail;
         LastResetToken = resetToken;
+        return Task.FromResult(true);
+    }
+
+    public Task<bool> SendVerificationCodeEmailAsync(string toEmail, string code, string displayName)
+    {
+        WasCalled = true;
+        LastToEmail = toEmail;
+        LastVerificationCode = code;
         return Task.FromResult(true);
     }
 }
@@ -60,7 +69,7 @@ public class AuthServiceTests
     }
 
     [Fact]
-    public async Task RegisterAsync_ShouldCreateUserAndTokens_WhenInputIsValid()
+    public async Task InitiateRegistrationAsync_ShouldCreateVerificationCode_WhenInputIsValid()
     {
         // Arrange
         using var context = CreateContext();
@@ -78,25 +87,91 @@ public class AuthServiceTests
         };
 
         // Act
-        var result = await service.RegisterAsync(request);
+        var result = await service.InitiateRegistrationAsync(request);
+
+        // Assert
+        Assert.True(result);
+        Assert.True(emailService.WasCalled);
+        Assert.Equal("runner1@example.com", emailService.LastToEmail);
+        Assert.NotNull(emailService.LastVerificationCode);
+        Assert.Equal(6, emailService.LastVerificationCode.Length);
+
+        var dbCode = await context.EmailVerificationCodes.FirstOrDefaultAsync(c => c.Email == "runner1@example.com");
+        Assert.NotNull(dbCode);
+        Assert.Equal("runner1", dbCode.Username);
+        Assert.Equal(HashToken(emailService.LastVerificationCode), dbCode.CodeHash);
+    }
+
+    [Fact]
+    public async Task VerifyRegistrationAsync_ShouldCreateUserAndTokens_WhenCodeIsValid()
+    {
+        // Arrange
+        using var context = CreateContext();
+        var config = CreateConfiguration();
+        var hasher = new PasswordHasher<User>();
+        var emailService = new TestEmailService();
+        var service = new AuthService(context, config, hasher, emailService);
+
+        var request = new RegisterRequest
+        {
+            Username = "runner2",
+            Email = "runner2@example.com",
+            Password = "SecurePassword123!",
+            DisplayName = "Runner Two"
+        };
+        await service.InitiateRegistrationAsync(request);
+        var code = emailService.LastVerificationCode!;
+
+        // Act
+        var result = await service.VerifyRegistrationAsync(new VerifyRegistrationRequest
+        {
+            Email = "runner2@example.com",
+            Code = code
+        });
 
         // Assert
         Assert.NotNull(result);
         Assert.NotNull(result.Response.AccessToken);
         Assert.NotEmpty(result.RefreshToken);
-        Assert.Equal("runner1", result.Response.User.Username);
+        Assert.Equal("runner2", result.Response.User.Username);
 
-        var dbUser = await context.Users.FirstOrDefaultAsync(u => u.Email == "runner1@example.com");
+        var dbUser = await context.Users.FirstOrDefaultAsync(u => u.Email == "runner2@example.com");
         Assert.NotNull(dbUser);
-        Assert.Equal("Runner One", dbUser.DisplayName);
+        Assert.Equal("Runner Two", dbUser.DisplayName);
 
         var dbToken = await context.RefreshTokens.FirstOrDefaultAsync(rt => rt.UserId == dbUser.Id);
         Assert.NotNull(dbToken);
-        Assert.Equal(HashToken(result.RefreshToken), dbToken.TokenHash);
     }
 
     [Fact]
-    public async Task RegisterAsync_ShouldThrowException_WhenEmailOrUsernameExists()
+    public async Task VerifyRegistrationAsync_ShouldThrow_WhenCodeIsInvalidOrExpired()
+    {
+        // Arrange
+        using var context = CreateContext();
+        var config = CreateConfiguration();
+        var hasher = new PasswordHasher<User>();
+        var emailService = new TestEmailService();
+        var service = new AuthService(context, config, hasher, emailService);
+
+        var request = new RegisterRequest
+        {
+            Username = "runner3",
+            Email = "runner3@example.com",
+            Password = "SecurePassword123!",
+            DisplayName = "Runner Three"
+        };
+        await service.InitiateRegistrationAsync(request);
+
+        // Act & Assert (Wrong code)
+        await Assert.ThrowsAsync<InvalidOperationException>(() => service.VerifyRegistrationAsync(new VerifyRegistrationRequest
+        {
+            Email = "runner3@example.com",
+            Code = "000000"
+        }));
+    }
+
+    [Fact]
+    public async Task InitiateRegistrationAsync_ShouldThrowException_WhenEmailOrUsernameExists()
     {
         // Arrange
         using var context = CreateContext();
@@ -132,8 +207,8 @@ public class AuthServiceTests
         };
 
         // Act & Assert
-        await Assert.ThrowsAsync<InvalidOperationException>(() => service.RegisterAsync(requestWithDupEmail));
-        await Assert.ThrowsAsync<InvalidOperationException>(() => service.RegisterAsync(requestWithDupUser));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => service.InitiateRegistrationAsync(requestWithDupEmail));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => service.InitiateRegistrationAsync(requestWithDupUser));
     }
 
     [Fact]

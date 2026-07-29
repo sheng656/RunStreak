@@ -23,6 +23,7 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("register")]
+    [EnableRateLimiting("login")]
     public async Task<IActionResult> Register([FromBody] RegisterRequest request)
     {
         if (!ModelState.IsValid)
@@ -32,15 +33,37 @@ public class AuthController : ControllerBase
 
         try
         {
-            var result = await _authService.RegisterAsync(request);
-            if (result == null)
+            var success = await _authService.InitiateRegistrationAsync(request);
+            if (!success)
             {
-                return BadRequest(new { message = "Registration failed." });
+                return BadRequest(new { message = "Failed to initiate registration." });
             }
 
-            // Return both tokens in the response body.
-            // The client stores the access token in memory (Zustand) and the
-            // refresh token in localStorage for session persistence across reloads.
+            return Ok(new { message = "Verification code sent to your email address." });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    [HttpPost("verify-registration")]
+    [EnableRateLimiting("login")]
+    public async Task<IActionResult> VerifyRegistration([FromBody] VerifyRegistrationRequest request)
+    {
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
+
+        try
+        {
+            var result = await _authService.VerifyRegistrationAsync(request);
+            if (result == null)
+            {
+                return BadRequest(new { message = "Registration verification failed." });
+            }
+
             return Ok(new AuthResponse
             {
                 AccessToken = result.Response.AccessToken,

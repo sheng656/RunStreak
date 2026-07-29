@@ -755,7 +755,7 @@ public static class DbSeeder
             Id = Guid.NewGuid(),
             Username = "testuser",
             Email = "test@runstreak.app",
-            DisplayName = "Sheng (Test Runner)",
+            DisplayName = "Test Runner",
             AvatarUrl = "https://api.dicebear.com/9.x/avataaars/svg?seed=Jack",
             WeeklyGoalKm = 35.0m,
             CreatedAt = baseDate.AddDays(-75),

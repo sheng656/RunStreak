@@ -131,6 +131,11 @@ export interface RegisterRequest {
   displayName: string
 }
 
+export interface VerifyRegistrationRequest {
+  email: string
+  code: string
+}
+
 export interface AuthResponse {
   accessToken: string
   // Refresh token returned in the response body; stored in localStorage by the client

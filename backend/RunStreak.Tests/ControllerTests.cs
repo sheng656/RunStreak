@@ -212,11 +212,12 @@ public class ControllerTests : IClassFixture<WebApplicationFactory<Program>>
         // Arrange
         var client = _factory.CreateClient();
         var unique = Guid.NewGuid().ToString("N")[..8];
+        var email = $"{unique}@example.com";
 
         var registerRequest = new RegisterRequest
         {
             Username = $"runner_{unique}",
-            Email = $"{unique}@example.com",
+            Email = email,
             Password = "Password123!",
             DisplayName = $"Runner {unique}"
         };
@@ -224,7 +225,24 @@ public class ControllerTests : IClassFixture<WebApplicationFactory<Program>>
         var registerResponse = await client.PostAsJsonAsync("/api/auth/register", registerRequest);
         Assert.Equal(HttpStatusCode.OK, registerResponse.StatusCode);
 
-        var authResponse = await registerResponse.Content.ReadFromJsonAsync<AuthResponse>();
+        // Override code hash in DB to verify with a known test code
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var codeEntity = await db.EmailVerificationCodes.FirstAsync(c => c.Email == email);
+            using var sha256 = System.Security.Cryptography.SHA256.Create();
+            codeEntity.CodeHash = Convert.ToHexString(sha256.ComputeHash(Encoding.UTF8.GetBytes("123456"))).ToLowerInvariant();
+            await db.SaveChangesAsync();
+        }
+
+        var verifyResponse = await client.PostAsJsonAsync("/api/auth/verify-registration", new VerifyRegistrationRequest
+        {
+            Email = email,
+            Code = "123456"
+        });
+        Assert.Equal(HttpStatusCode.OK, verifyResponse.StatusCode);
+
+        var authResponse = await verifyResponse.Content.ReadFromJsonAsync<AuthResponse>();
         Assert.NotNull(authResponse);
         Assert.False(string.IsNullOrWhiteSpace(authResponse.RefreshToken));
 

@@ -4,7 +4,8 @@ namespace RunStreak.Api.Services;
 
 public interface IAuthService
 {
-    Task<AuthResult?> RegisterAsync(RegisterRequest request);
+    Task<bool> InitiateRegistrationAsync(RegisterRequest request);
+    Task<AuthResult?> VerifyRegistrationAsync(VerifyRegistrationRequest request);
     Task<AuthResult?> LoginAsync(LoginRequest request);
     Task<AuthResult?> RefreshAsync(string rawRefreshToken);
     Task<bool> LogoutAsync(string rawRefreshToken);

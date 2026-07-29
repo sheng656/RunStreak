@@ -1,8 +1,8 @@
 # RunStreak — Project Plan (LIVE)
 
 > **Last updated:** 2026-07-29
-> **Current focus:** Phase 13 — Landing Page UI/UX Overhaul (DONE)
-> **Overall status:** ✅ Phase 0-8 complete, Phase 10 complete, Phase 11 complete, Phase 12 complete, Phase 13 complete
+> **Current focus:** Phase 14 — Email Verification Code Confirmation & Test User Rename (DONE)
+> **Overall status:** ✅ Phase 0-8 complete, Phase 10-14 complete
 
 
 This file is the single source of truth for what's done, what's in progress, and what's next. Agents must read it at the start of every session and update it at the end.
@@ -427,6 +427,7 @@ Phase 0 (scaffold)
 | 13 | Shareable Brag Cards (Canvas API, OpenGraph 1200x630, QR Code) | Decided | `specs/decisions/013-shareable-brag-cards.md` |
 | 14 | Password Reset Flow & Resend REST Email Integration | Decided | `specs/decisions/014-password-reset-resend.md` |
 | 15 | Landing Page UI/UX Overhaul (glassmorphism, animated orbs, floating phone, mobile stacking) | Decided | See prompt log `2026-07-29-landing-page-uiux-overhaul.md` |
+| 16 | 2-Step Registration with 6-Digit Email Verification Code & Test User Rename | Decided | `specs/decisions/015-email-verification-registration.md` |
 
 ---
 
@@ -451,3 +452,19 @@ Phase 0 (scaffold)
 - [x] Theme support verified: all surfaces use `hsl(var(--color-*))` tokens; adapts to both light and dark
 - [x] Build verified: `npm run build` — 0 errors, 0 warnings
 - [x] Prompt log written: `specs/prompts/2026-07-29-landing-page-uiux-overhaul.md`
+
+---
+
+## Phase 14 — Email Verification Code Confirmation & Test User Rename
+
+**Goal:** Require 6-digit email verification code confirmation on registration and rename all test user references from "Sheng" to "Test Runner".
+
+- [x] Renamed test user references from "Sheng (Test Runner)" / "Sheng" to "Test Runner" in `DbSeeder.cs`, `AppShowcase.tsx`, and `README.md` (author credit unchanged)
+- [x] Created `EmailVerificationCode` EF Core model and migration `AddEmailVerificationCodes`
+- [x] Extended `IEmailService` and `ResendEmailService` with `SendVerificationCodeEmailAsync` (includes dev/testing console fallback logging)
+- [x] Added `VerifyRegistrationRequest` DTO and updated `IAuthService` / `AuthService` with `InitiateRegistrationAsync` and `VerifyRegistrationAsync`
+- [x] Updated `AuthController` with `POST /api/auth/register` (initiates verification) and `POST /api/auth/verify-registration` (verifies & issues tokens)
+- [x] Refactored `RegisterPage.tsx` into a 2-step flow with 6-digit code verification and a 60-second cooldown timer on the "Resend Code" button
+- [x] Updated `AuthServiceTests.cs` and `ControllerTests.cs` (40/40 tests passing)
+- [x] Created ADR `specs/decisions/015-email-verification-registration.md` and prompt log `specs/prompts/2026-07-29-email-verification-registration.md`
+

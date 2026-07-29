@@ -1,12 +1,15 @@
 import { apiClient } from './client'
-import type { AuthResponse, LoginRequest, RegisterRequest } from '../types/api'
+import type { AuthResponse, LoginRequest, RegisterRequest, VerifyRegistrationRequest } from '../types/api'
 
 const authApi = {
   login: (data: LoginRequest) =>
     apiClient.post<AuthResponse>('/auth/login', data),
 
   register: (data: RegisterRequest) =>
-    apiClient.post<AuthResponse>('/auth/register', data),
+    apiClient.post<{ message: string }>('/auth/register', data),
+
+  verifyRegistration: (data: VerifyRegistrationRequest) =>
+    apiClient.post<AuthResponse>('/auth/verify-registration', data),
 
   logout: (refreshToken: string) =>
     apiClient.post('/auth/logout', { refreshToken }),

@@ -30,34 +30,94 @@ public class AuthService : IAuthService
         _emailService = emailService;
     }
 
-    public async Task<AuthResult?> RegisterAsync(RegisterRequest request)
+    public async Task<bool> InitiateRegistrationAsync(RegisterRequest request)
     {
-        // Check duplicate email
-        var emailExists = await _context.Users.AnyAsync(u => u.Email.ToLower() == request.Email.ToLower());
+        var normalizedEmail = request.Email.Trim().ToLower();
+        var normalizedUsername = request.Username.Trim().ToLower();
+
+        // Check duplicate email in Users
+        var emailExists = await _context.Users.AnyAsync(u => u.Email.ToLower() == normalizedEmail);
         if (emailExists)
         {
             throw new InvalidOperationException("Email address is already in use.");
         }
 
-        // Check duplicate username
-        var usernameExists = await _context.Users.AnyAsync(u => u.Username.ToLower() == request.Username.ToLower());
+        // Check duplicate username in Users
+        var usernameExists = await _context.Users.AnyAsync(u => u.Username.ToLower() == normalizedUsername);
         if (usernameExists)
         {
             throw new InvalidOperationException("Username is already taken.");
         }
 
-        // Create new User entity
+        // Generate 6-digit numeric verification code
+        var code = RandomNumberGenerator.GetInt32(100000, 1000000).ToString();
+        var codeHash = HashToken(code);
+
+        // Pre-hash password for user entity
+        var dummyUser = new User { Username = request.Username, Email = request.Email };
+        var passwordHash = _passwordHasher.HashPassword(dummyUser, request.Password);
+
+        // Revoke/remove any existing unverified code entries for this email
+        var existingCodes = await _context.EmailVerificationCodes
+            .Where(evc => evc.Email.ToLower() == normalizedEmail && evc.VerifiedAt == null)
+            .ToListAsync();
+        _context.EmailVerificationCodes.RemoveRange(existingCodes);
+
+        var verificationEntity = new EmailVerificationCode
+        {
+            Email = request.Email,
+            Username = request.Username,
+            DisplayName = request.DisplayName,
+            PasswordHash = passwordHash,
+            CodeHash = codeHash,
+            ExpiresAt = DateTime.UtcNow.AddMinutes(10),
+            CreatedAt = DateTime.UtcNow
+        };
+
+        _context.EmailVerificationCodes.Add(verificationEntity);
+        await _context.SaveChangesAsync();
+
+        await _emailService.SendVerificationCodeEmailAsync(request.Email, code, request.DisplayName);
+        return true;
+    }
+
+    public async Task<AuthResult?> VerifyRegistrationAsync(VerifyRegistrationRequest request)
+    {
+        var normalizedEmail = request.Email.Trim().ToLower();
+        var codeHash = HashToken(request.Code.Trim());
+
+        var verificationEntry = await _context.EmailVerificationCodes
+            .FirstOrDefaultAsync(evc => evc.Email.ToLower() == normalizedEmail && evc.VerifiedAt == null && evc.CodeHash == codeHash);
+
+        if (verificationEntry == null || DateTime.UtcNow >= verificationEntry.ExpiresAt)
+        {
+            throw new InvalidOperationException("Invalid or expired verification code.");
+        }
+
+        // Double check duplicate email/username in case registered in the background
+        var emailExists = await _context.Users.AnyAsync(u => u.Email.ToLower() == normalizedEmail);
+        if (emailExists)
+        {
+            throw new InvalidOperationException("Email address is already in use.");
+        }
+
+        var usernameExists = await _context.Users.AnyAsync(u => u.Username.ToLower() == verificationEntry.Username.ToLower());
+        if (usernameExists)
+        {
+            throw new InvalidOperationException("Username is already taken.");
+        }
+
         var user = new User
         {
-            Username = request.Username,
-            Email = request.Email,
-            DisplayName = request.DisplayName,
+            Username = verificationEntry.Username,
+            Email = verificationEntry.Email,
+            DisplayName = verificationEntry.DisplayName,
+            PasswordHash = verificationEntry.PasswordHash,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         };
 
-        // Hash password
-        user.PasswordHash = _passwordHasher.HashPassword(user, request.Password);
+        verificationEntry.VerifiedAt = DateTime.UtcNow;
 
         _context.Users.Add(user);
         await _context.SaveChangesAsync();

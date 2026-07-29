@@ -18,6 +18,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<Challenge> Challenges => Set<Challenge>();
     public DbSet<UserChallenge> UserChallenges => Set<UserChallenge>();
     public DbSet<PasswordResetToken> PasswordResetTokens => Set<PasswordResetToken>();
+    public DbSet<EmailVerificationCode> EmailVerificationCodes => Set<EmailVerificationCode>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -173,6 +174,20 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
                 .WithMany(u => u.PasswordResetTokens)
                 .HasForeignKey(prt => prt.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // ── EmailVerificationCodes ──────────────────────────────────────────
+        modelBuilder.Entity<EmailVerificationCode>(entity =>
+        {
+            entity.HasKey(evc => evc.Id);
+            entity.HasIndex(evc => evc.Email);
+            entity.HasIndex(evc => evc.CodeHash);
+
+            entity.Property(evc => evc.Email).HasMaxLength(256).IsRequired();
+            entity.Property(evc => evc.Username).HasMaxLength(50).IsRequired();
+            entity.Property(evc => evc.DisplayName).HasMaxLength(100).IsRequired();
+            entity.Property(evc => evc.PasswordHash).IsRequired();
+            entity.Property(evc => evc.CodeHash).IsRequired();
         });
     }
 }

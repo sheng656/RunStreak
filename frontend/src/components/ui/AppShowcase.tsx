@@ -270,7 +270,7 @@ const SHOWCASE_SLIDES: ShowcaseSlide[] = [
         <div className="p-2 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-between text-[10px]">
           <div className="flex items-center gap-1.5">
             <span className="w-4 h-4 rounded-full bg-amber-400 text-slate-950 font-bold text-center leading-4 text-[9px]">1</span>
-            <span className="font-bold text-white">Sheng</span>
+            <span className="font-bold text-white">Test Runner</span>
           </div>
           <span className="font-bold text-amber-300">3,420 pts</span>
         </div>
@@ -295,7 +295,7 @@ const SHOWCASE_SLIDES: ShowcaseSlide[] = [
         <div className="p-2 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-between text-[10px]">
           <div className="flex items-center gap-1.5">
             <span className="w-4 h-4 rounded-full bg-amber-400 text-white font-bold text-center leading-4 text-[9px]">1</span>
-            <span className="font-bold text-slate-800">Sheng</span>
+            <span className="font-bold text-slate-800">Test Runner</span>
           </div>
           <span className="font-bold text-amber-600">3,420 pts</span>
         </div>
