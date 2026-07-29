@@ -61,18 +61,18 @@ export default function WeeklyProgress({
     <div className="card p-4 space-y-3">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Target size={16} className={isComplete ? 'text-emerald-400' : 'text-[hsl(var(--color-brand))]'} />
-          <h2 className="text-sm font-semibold text-[hsl(var(--color-text))]">This Week</h2>
+        <div className="flex items-center gap-2 min-w-0">
+          <Target size={16} className={`shrink-0 ${isComplete ? 'text-emerald-400' : 'text-[hsl(var(--color-brand))]'}`} />
+          <h2 className="text-sm font-semibold text-[hsl(var(--color-text))] truncate">Weekly Goal</h2>
           {isComplete && (
-            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-[10px] font-bold uppercase tracking-wider">
+            <span className="hidden sm:inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-[10px] font-bold uppercase tracking-wider shrink-0">
               <Check size={9} strokeWidth={3} /> Goal reached!
             </span>
           )}
         </div>
         <button
           onClick={() => setEditing(!editing)}
-          className="flex items-center gap-1 text-[10px] font-semibold text-[hsl(var(--color-text-muted))] hover:text-[hsl(var(--color-brand))] transition-colors"
+          className="flex items-center gap-1 text-[11px] font-semibold text-[hsl(var(--color-text-muted))] hover:text-[hsl(var(--color-brand))] transition-colors shrink-0 ml-2"
         >
           Goal: {weeklyGoalKm} km
           {editing ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
@@ -81,13 +81,13 @@ export default function WeeklyProgress({
 
       {/* Goal picker */}
       {editing && (
-        <div className="flex flex-wrap items-center gap-1.5 animate-fade-in pt-1">
+        <div className="flex flex-wrap items-center gap-1.5 animate-fade-in pt-1 border-t border-[hsl(var(--color-border))/0.4]">
           {PRESET_GOALS.map((g) => (
             <button
               key={g}
               disabled={saving}
               onClick={() => handleGoalChange(g)}
-              className={`px-3 py-1 rounded-lg text-xs font-semibold border transition-all ${
+              className={`px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all ${
                 g === weeklyGoalKm
                   ? 'bg-[hsl(var(--color-brand))] border-[hsl(var(--color-brand))] text-white'
                   : 'border-[hsl(var(--color-border))] text-[hsl(var(--color-text-muted))] hover:border-[hsl(var(--color-brand)/0.5)] hover:text-[hsl(var(--color-brand))]'
@@ -96,8 +96,8 @@ export default function WeeklyProgress({
               {g} km
             </button>
           ))}
-          <form onSubmit={handleCustomSubmit} className="flex items-center gap-1 ml-auto sm:ml-2">
-            <div className="relative flex items-center">
+          <form onSubmit={handleCustomSubmit} className="flex items-center gap-1 w-full sm:w-auto mt-1 sm:mt-0 sm:ml-auto">
+            <div className="relative flex items-center flex-1 sm:flex-initial">
               <input
                 type="number"
                 min="1"
@@ -106,14 +106,14 @@ export default function WeeklyProgress({
                 placeholder="Custom"
                 value={customGoal}
                 onChange={(e) => setCustomGoal(e.target.value)}
-                className="w-20 px-2 py-1 text-xs rounded-lg border border-[hsl(var(--color-border))] bg-[hsl(var(--color-surface))] text-[hsl(var(--color-text))] focus:border-[hsl(var(--color-brand))] focus:outline-none"
+                className="w-full sm:w-20 px-2 py-1 text-xs rounded-lg border border-[hsl(var(--color-border))] bg-[hsl(var(--color-surface))] text-[hsl(var(--color-text))] focus:border-[hsl(var(--color-brand))] focus:outline-none"
               />
               <span className="absolute right-2 text-[10px] text-[hsl(var(--color-text-muted))] pointer-events-none">km</span>
             </div>
             <button
               type="submit"
               disabled={saving || !customGoal}
-              className="btn btn-primary btn-sm text-xs py-1 px-2.5"
+              className="btn btn-primary btn-sm text-xs py-1 px-3 shrink-0"
             >
               Set
             </button>
@@ -138,9 +138,9 @@ export default function WeeklyProgress({
             <strong className="text-[hsl(var(--color-text))]">{Number(weeklyDistanceKm).toFixed(1)} km</strong>
             {' '}/{' '}{weeklyGoalKm} km goal
           </span>
-          <span className="flex gap-3">
+          <span className="flex gap-2 sm:gap-3">
             <span>{weeklyRunCount} run{weeklyRunCount !== 1 ? 's' : ''}</span>
-            {weeklyPoints > 0 && <span className="text-[hsl(var(--color-fire))]">+{weeklyPoints} pts</span>}
+            {weeklyPoints > 0 && <span className="text-[hsl(var(--color-fire))] font-semibold">+{weeklyPoints} pts</span>}
           </span>
         </div>
       </div>

@@ -116,9 +116,9 @@ export default function DashboardPage() {
   const thisWeekRunDates = recentRuns.map(r => r.runDate)
 
   return (
-    <div className="page-container space-y-4">
+    <div className="page-container space-y-4 sm:space-y-5 px-3.5 sm:px-6">
       {/* Welcome + streak hero */}
-      <div className="card p-6 sm:p-8 overflow-hidden relative animate-fade-in-up">
+      <div className="card p-4 sm:p-7 overflow-hidden relative animate-fade-in-up">
         {/* Decorative gradient background */}
         <div
           className="absolute inset-0 opacity-5"
@@ -131,10 +131,10 @@ export default function DashboardPage() {
         <div className="relative">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h1 className="text-xl sm:text-2xl font-bold text-[hsl(var(--color-text))]">
+              <h1 className="text-lg sm:text-2xl font-bold text-[hsl(var(--color-text))]">
                 Hey, {user.displayName || user.username}! 👋
               </h1>
-              {/* Dynamic motivational insight replaces static subtitle */}
+              {/* Dynamic motivational insight */}
               <div className="mt-2">
                 {stats ? (
                   <MotivationalInsight
@@ -146,7 +146,7 @@ export default function DashboardPage() {
                     closestBadgeKmLeft={closestBadgeKmLeft}
                   />
                 ) : (
-                  <p className="text-sm text-[hsl(var(--color-text-muted))] mt-1">
+                  <p className="text-xs sm:text-sm text-[hsl(var(--color-text-muted))] mt-1">
                     {streakActive
                       ? "Keep the fire burning — don't break your streak!"
                       : 'Start a streak today by logging a run.'}
@@ -154,74 +154,77 @@ export default function DashboardPage() {
                 )}
               </div>
             </div>
-            <div className="flex items-center gap-2 shrink-0">
+
+            {/* Action buttons: full-width on mobile, flex-initial on sm+ */}
+            <div className="flex items-center gap-2.5 w-full sm:w-auto shrink-0">
               <button
                 type="button"
                 onClick={() => setShowShareModal(true)}
-                className="btn btn-secondary btn-lg flex items-center gap-1.5"
+                className="btn btn-secondary btn-md sm:btn-lg flex-1 sm:flex-initial flex items-center justify-center gap-1.5"
               >
-                <Share2 size={18} />
-                <span>Share Stats</span>
+                <Share2 size={16} />
+                <span className="text-xs sm:text-sm">Share Stats</span>
               </button>
-              <Link to="/runs/new" className="btn btn-fire btn-lg shrink-0">
-                <Plus size={18} />
-                Log a Run
+              <Link to="/runs/new" className="btn btn-fire btn-md sm:btn-lg flex-1 sm:flex-initial flex items-center justify-center gap-1.5">
+                <Plus size={16} />
+                <span className="text-xs sm:text-sm">Log Run</span>
               </Link>
             </div>
           </div>
 
           {/* Streak display */}
-          <div className="mt-6 flex flex-col md:flex-row md:items-center md:justify-between gap-6 border-t border-[hsl(var(--color-border))/0.3] pt-6">
-            <div className="flex items-center gap-4">
+          <div className="mt-5 sm:mt-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4 sm:gap-6 border-t border-[hsl(var(--color-border))/0.3] pt-5 sm:pt-6">
+            <div className="flex items-center gap-3.5 sm:gap-4">
               <div
-                className={`relative flex items-center justify-center w-20 h-20 rounded-2xl ${
+                className={`relative flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 rounded-2xl shrink-0 ${
                   streakActive
                     ? 'gradient-fire animate-pulse-glow'
                     : 'bg-[hsl(var(--color-surface-2))]'
                 }`}
               >
                 <Flame
-                  size={40}
+                  size={32}
                   className={streakActive ? 'text-white animate-fire' : 'text-[hsl(var(--color-text-muted))]'}
                 />
                 {user.streakFreezeCount > 0 && (
-                  <div className="absolute -top-2 -right-2 bg-blue-500 border-2 border-[hsl(var(--color-surface))] text-white text-xs font-black w-6 h-6 rounded-full flex items-center justify-center shadow-lg" title={`${user.streakFreezeCount} Rest Day Tickets Available`}>
-                    <Shield size={12} fill="white" className="inline" />
+                  <div className="absolute -top-1.5 -right-1.5 bg-blue-500 border-2 border-[hsl(var(--color-surface))] text-white text-[10px] font-black w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center shadow-lg" title={`${user.streakFreezeCount} Rest Day Tickets Available`}>
+                    <Shield size={10} fill="white" className="inline sm:hidden" />
+                    <Shield size={12} fill="white" className="hidden sm:inline" />
                   </div>
                 )}
               </div>
-              <div>
-                <div className="flex items-baseline gap-1">
-                  <span className="text-4xl sm:text-5xl font-extrabold text-[hsl(var(--color-text))]">
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-baseline gap-1">
+                  <span className="text-3xl sm:text-5xl font-extrabold text-[hsl(var(--color-text))]">
                     {user.currentStreak}
                   </span>
-                  <span className="text-lg text-[hsl(var(--color-text-muted))] font-medium">
+                  <span className="text-sm sm:text-lg text-[hsl(var(--color-text-muted))] font-medium">
                     day{user.currentStreak !== 1 ? 's' : ''}
                   </span>
                   {user.streakFreezeCount > 0 && (
-                    <span className="inline-flex items-center gap-1 ml-2.5 px-2 py-0.5 rounded-full bg-blue-500/10 border border-blue-500/30 text-blue-400 text-xs font-semibold animate-pulse">
+                    <span className="inline-flex items-center gap-1 ml-1.5 sm:ml-2.5 px-2 py-0.5 rounded-full bg-blue-500/10 border border-blue-500/30 text-blue-400 text-[10px] sm:text-xs font-semibold animate-pulse">
                       <Shield size={10} fill="currentColor" />
                       Protected
                     </span>
                   )}
                 </div>
-                <p className="text-sm text-[hsl(var(--color-text-muted))]">
+                <p className="text-xs sm:text-sm text-[hsl(var(--color-text-muted))] truncate">
                   Current streak · Best: {user.longestStreak} days
                 </p>
               </div>
             </div>
 
             {/* Streak Freeze Purchase panel */}
-            <div className="flex flex-col items-start md:items-end gap-1.5 bg-[hsl(var(--color-surface-2))]/30 border border-[hsl(var(--color-border))/0.5] rounded-2xl p-4 md:p-3 shrink-0">
+            <div className="flex flex-col sm:flex-row md:flex-col items-start sm:items-center md:items-end justify-between gap-2 bg-[hsl(var(--color-surface-2))]/30 border border-[hsl(var(--color-border))/0.5] rounded-2xl p-3.5 sm:p-3 w-full md:w-auto shrink-0">
               <div className="text-xs text-[hsl(var(--color-text-muted))] flex items-center gap-1.5 font-semibold uppercase tracking-wider">
-                <Shield size={12} className="text-blue-400" />
+                <Shield size={12} className="text-blue-400 shrink-0" />
                 <span>Rest Day Tickets: <strong className="text-[hsl(var(--color-text))]">{user.streakFreezeCount} / 5</strong></span>
               </div>
               <button
                 type="button"
                 onClick={() => setShowPurchaseConfirm(true)}
                 disabled={purchasing || user.streakFreezeCount >= 5 || user.totalPoints < 256}
-                className="btn btn-secondary btn-sm flex items-center gap-1.5 shadow-sm text-xs py-1.5 border-[hsl(var(--color-border))] bg-[hsl(var(--color-surface-2))] hover:bg-[hsl(var(--color-border))] disabled:opacity-50"
+                className="btn btn-secondary btn-sm flex items-center gap-1.5 shadow-sm text-xs py-1.5 px-3 border-[hsl(var(--color-border))] bg-[hsl(var(--color-surface-2))] hover:bg-[hsl(var(--color-border))] disabled:opacity-50 w-full sm:w-auto justify-center"
                 title="Rest day tickets must be purchased in advance before taking a rest day. They cannot be applied retroactively to past missed days."
               >
                 {purchasing ? (
@@ -242,10 +245,10 @@ export default function DashboardPage() {
       <ActiveChallengeWidget />
 
       {/* Weekly Calendar — "Don't break the chain" */}
-      <div className="card p-4">
+      <div className="card p-3.5 sm:p-4">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-sm font-semibold text-[hsl(var(--color-text))]">This Week</h2>
-          <span className="text-xs text-[hsl(var(--color-text-muted))]">Mon – Sun</span>
+          <h2 className="text-xs sm:text-sm font-semibold text-[hsl(var(--color-text))]">This Week</h2>
+          <span className="text-[11px] sm:text-xs text-[hsl(var(--color-text-muted))]">Mon – Sun</span>
         </div>
         <WeeklyCalendar runDates={thisWeekRunDates} />
       </div>
@@ -261,27 +264,27 @@ export default function DashboardPage() {
       )}
 
       {/* Stats grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
         <StatCard
-          icon={<Zap size={20} />}
+          icon={<Zap size={18} className="sm:w-5 sm:h-5" />}
           label="Total Points"
           value={user.totalPoints.toLocaleString()}
           accent="brand"
         />
         <StatCard
-          icon={<MapPin size={20} />}
+          icon={<MapPin size={18} className="sm:w-5 sm:h-5" />}
           label="Distance"
           value={`${Number(user.totalDistanceKm).toFixed(1)} km`}
           accent="success"
         />
         <StatCard
-          icon={<CalendarDays size={20} />}
+          icon={<CalendarDays size={18} className="sm:w-5 sm:h-5" />}
           label="Total Runs"
           value={user.totalRuns}
           accent="fire"
         />
         <StatCard
-          icon={<TrendingUp size={20} />}
+          icon={<TrendingUp size={18} className="sm:w-5 sm:h-5" />}
           label="Best Streak"
           value={`${user.longestStreak} days`}
           accent="warning"
@@ -295,15 +298,15 @@ export default function DashboardPage() {
       <div className="grid lg:grid-cols-3 gap-4">
         {/* Recent Runs — 2/3 width */}
         <div className="lg:col-span-2 card overflow-hidden">
-          <div className="flex items-center justify-between p-4 border-b border-[hsl(var(--color-border))]">
-            <h2 className="font-semibold text-[hsl(var(--color-text))]">Recent Runs</h2>
-            <Link to="/runs" className="text-sm font-medium text-[hsl(var(--color-brand))] hover:underline">
+          <div className="flex items-center justify-between p-3.5 sm:p-4 border-b border-[hsl(var(--color-border))]">
+            <h2 className="font-semibold text-sm sm:text-base text-[hsl(var(--color-text))]">Recent Runs</h2>
+            <Link to="/runs" className="text-xs sm:text-sm font-medium text-[hsl(var(--color-brand))] hover:underline">
               View all
             </Link>
           </div>
           {recentRuns.length === 0 ? (
             <EmptyState
-              icon={<MapPin size={40} />}
+              icon={<MapPin size={36} />}
               title="No runs yet"
               description="Log your first run to start earning points and building your streak."
               action={
@@ -317,16 +320,16 @@ export default function DashboardPage() {
               {recentRuns.slice(0, 5).map((run, i) => (
                 <div
                   key={run.id}
-                  className={`flex items-center gap-4 px-4 py-3 hover:bg-[hsl(var(--color-surface-2))] transition-colors animate-fade-in-up stagger-${i + 1}`}
+                  className={`flex items-center gap-3 sm:gap-4 px-3.5 sm:px-4 py-3 hover:bg-[hsl(var(--color-surface-2))] transition-colors animate-fade-in-up stagger-${i + 1}`}
                 >
-                  <div className="w-9 h-9 rounded-[var(--radius-sm)] bg-[hsl(var(--color-brand)/0.1)] flex items-center justify-center shrink-0">
+                  <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-[var(--radius-sm)] bg-[hsl(var(--color-brand)/0.1)] flex items-center justify-center shrink-0">
                     <MapPin size={16} className="text-[hsl(var(--color-brand))]" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-[hsl(var(--color-text))]">
+                    <p className="text-xs sm:text-sm font-medium text-[hsl(var(--color-text))]">
                       {Number(run.distanceKm).toFixed(2)} km
                     </p>
-                    <p className="text-xs text-[hsl(var(--color-text-muted))]">
+                    <p className="text-[11px] sm:text-xs text-[hsl(var(--color-text-muted))]">
                       {new Date(run.runDate).toLocaleDateString(undefined, {
                         month: 'short',
                         day: 'numeric',
@@ -335,7 +338,7 @@ export default function DashboardPage() {
                       {Number(run.durationMinutes).toFixed(0)} min
                     </p>
                   </div>
-                  <div className="flex items-center gap-1 text-sm font-semibold text-[hsl(var(--color-fire))]">
+                  <div className="flex items-center gap-1 text-xs sm:text-sm font-semibold text-[hsl(var(--color-fire))] shrink-0">
                     <Zap size={14} />
                     +{run.pointsEarned}
                   </div>
@@ -347,33 +350,33 @@ export default function DashboardPage() {
 
         {/* Recent Badges — 1/3 width */}
         <div className="card overflow-hidden">
-          <div className="flex items-center justify-between p-4 border-b border-[hsl(var(--color-border))]">
-            <h2 className="font-semibold text-[hsl(var(--color-text))]">Badges</h2>
-            <Link to="/badges" className="text-sm font-medium text-[hsl(var(--color-brand))] hover:underline">
+          <div className="flex items-center justify-between p-3.5 sm:p-4 border-b border-[hsl(var(--color-border))]">
+            <h2 className="font-semibold text-sm sm:text-base text-[hsl(var(--color-text))]">Badges</h2>
+            <Link to="/badges" className="text-xs sm:text-sm font-medium text-[hsl(var(--color-brand))] hover:underline">
               View all
             </Link>
           </div>
           {recentBadges.length === 0 ? (
             <EmptyState
-              icon={<Medal size={40} />}
+              icon={<Medal size={36} />}
               title="No badges yet"
               description="Log runs to unlock badges and earn bonus points."
             />
           ) : (
-            <div className="p-4 space-y-3">
+            <div className="p-3 sm:p-4 space-y-2.5 sm:space-y-3">
               {recentBadges.map((badge, i) => (
                 <div
                   key={badge.badgeId}
-                  className={`flex items-center gap-3 p-2 rounded-[var(--radius-sm)] hover:bg-[hsl(var(--color-surface-2))] transition-colors animate-fade-in-up stagger-${i + 1}`}
+                  className={`flex items-center gap-2.5 sm:gap-3 p-2 rounded-[var(--radius-sm)] hover:bg-[hsl(var(--color-surface-2))] transition-colors animate-fade-in-up stagger-${i + 1}`}
                 >
-                  <div className="w-9 h-9 rounded-full bg-[hsl(var(--color-fire)/0.1)] flex items-center justify-center shrink-0">
+                  <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-[hsl(var(--color-fire)/0.1)] flex items-center justify-center shrink-0">
                     <Trophy size={16} className="text-[hsl(var(--color-fire))]" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-[hsl(var(--color-text))] truncate">
+                    <p className="text-xs sm:text-sm font-medium text-[hsl(var(--color-text))] truncate">
                       {badge.name}
                     </p>
-                    <p className="text-xs text-[hsl(var(--color-text-muted))] truncate">
+                    <p className="text-[11px] sm:text-xs text-[hsl(var(--color-text-muted))] truncate">
                       {badge.description}
                     </p>
                   </div>
@@ -387,7 +390,7 @@ export default function DashboardPage() {
       {/* Rest Day Ticket Purchase Confirmation Modal */}
       {showPurchaseConfirm && (
         <div className="fixed inset-0 z-50 bg-[hsl(var(--color-overlay))] backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
-          <div className="card max-w-md w-full p-6 space-y-5 shadow-2xl border border-[hsl(var(--color-border))] bg-[hsl(var(--color-surface))] animate-fade-in-up relative">
+          <div className="card max-w-md w-full p-5 sm:p-6 space-y-4 sm:space-y-5 shadow-2xl border border-[hsl(var(--color-border))] bg-[hsl(var(--color-surface))] animate-fade-in-up relative">
             <button
               type="button"
               onClick={() => setShowPurchaseConfirm(false)}
@@ -396,12 +399,12 @@ export default function DashboardPage() {
               <X size={18} />
             </button>
 
-            <div className="flex items-start gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-blue-500/10 text-blue-400 flex items-center justify-center shrink-0 border border-blue-500/20 shadow-sm">
-                <Shield size={24} />
+            <div className="flex items-start gap-3 sm:gap-4">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-blue-500/10 text-blue-400 flex items-center justify-center shrink-0 border border-blue-500/20 shadow-sm">
+                <Shield size={22} />
               </div>
               <div className="space-y-1">
-                <h3 className="text-lg font-bold text-[hsl(var(--color-text))]">Purchase Rest Day Ticket</h3>
+                <h3 className="text-base sm:text-lg font-bold text-[hsl(var(--color-text))]">Purchase Rest Day Ticket</h3>
                 <p className="text-xs text-[hsl(var(--color-text-muted))] leading-relaxed">
                   Bank a ticket to protect your running streak when taking a planned rest day.
                 </p>
@@ -409,7 +412,7 @@ export default function DashboardPage() {
             </div>
 
             {/* Advance Purchase Rules Highlight */}
-            <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/20 space-y-2 text-xs">
+            <div className="p-3 sm:p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/20 space-y-2 text-xs">
               <div className="flex items-center gap-1.5 font-bold text-amber-500">
                 <AlertCircle size={14} />
                 <span>Important Ticket Rules:</span>
@@ -422,7 +425,7 @@ export default function DashboardPage() {
             </div>
 
             {/* Impact Details Box */}
-            <div className="p-3.5 rounded-xl bg-[hsl(var(--color-surface-2))]/70 border border-[hsl(var(--color-border))]/50 space-y-2 text-xs">
+            <div className="p-3 sm:p-3.5 rounded-xl bg-[hsl(var(--color-surface-2))]/70 border border-[hsl(var(--color-border))]/50 space-y-2 text-xs">
               <div className="flex items-center justify-between">
                 <span className="text-[hsl(var(--color-text-muted))]">Cost:</span>
                 <span className="font-bold text-amber-500 flex items-center gap-1">

@@ -52,20 +52,26 @@ export default function PersonalRecords({ stats, isNewPBPace, isNewPBDistance, i
         <Trophy size={15} className="text-amber-400" />
         <h2 className="text-sm font-semibold text-[hsl(var(--color-text))]">Personal Records</h2>
       </div>
-      <div className="grid grid-cols-3 divide-x divide-[hsl(var(--color-border))]">
+      <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-[hsl(var(--color-border))]">
         {records.map((rec) => (
-          <div key={rec.label} className="relative flex flex-col items-center justify-center py-4 px-2 text-center gap-1 hover:bg-[hsl(var(--color-surface-2))] transition-colors">
-            {rec.isPB && (
-              <span className="absolute top-2 right-2 text-[9px] font-black uppercase text-amber-400 bg-amber-500/10 border border-amber-500/20 px-1 rounded tracking-wider animate-pulse">
-                PB!
-              </span>
-            )}
-            <span className={`${rec.accent}`}>{rec.icon}</span>
-            <p className="text-xs text-[hsl(var(--color-text-muted))] font-medium">{rec.label}</p>
-            <p className="text-base font-bold text-[hsl(var(--color-text))]">{rec.value}</p>
-            {rec.subLabel && (
-              <p className="text-[10px] text-[hsl(var(--color-text-muted))]">{rec.subLabel}</p>
-            )}
+          <div key={rec.label} className="relative flex items-center justify-between sm:flex-col sm:justify-center py-3.5 px-4 sm:px-2 text-left sm:text-center gap-1 hover:bg-[hsl(var(--color-surface-2))] transition-colors">
+            <div className="flex items-center gap-2.5 sm:flex-col sm:gap-1">
+              <span className={`${rec.accent}`}>{rec.icon}</span>
+              <div>
+                <p className="text-xs text-[hsl(var(--color-text-muted))] font-medium">{rec.label}</p>
+                {rec.subLabel && (
+                  <p className="text-[10px] text-[hsl(var(--color-text-muted))] sm:block hidden">{rec.subLabel}</p>
+                )}
+              </div>
+            </div>
+            <div className="flex items-center gap-2 sm:flex-col sm:gap-0.5">
+              <p className="text-base sm:text-lg font-bold text-[hsl(var(--color-text))]">{rec.value}</p>
+              {rec.isPB && (
+                <span className="text-[9px] font-black uppercase text-amber-400 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded tracking-wider animate-pulse">
+                  PB!
+                </span>
+              )}
+            </div>
           </div>
         ))}
       </div>

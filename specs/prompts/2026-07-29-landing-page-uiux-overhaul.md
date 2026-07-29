@@ -89,3 +89,44 @@ The homepage is fully theme-aware:
 *Agent produced:*
 - Updated [`frontend/public/favicon.svg`](file:///d:/App/RunStreak/frontend/public/favicon.svg) to render an orange-to-amber gradient rounded square containing the centered white Lucide `Flame` icon, matching the brand icon on the login screen.
 
+---
+
+## Follow-up Prompt 5 — Points Earned Calculation Fix
+
+> After logging a run, the app always displays that 0 points were earned. What could be the issue? / fix that for me
+
+*Agent produced:*
+- [`backend/RunStreak.Api/Services/RunService.cs`](file:///d:/App/RunStreak/backend/RunStreak.Api/Services/RunService.cs): Initialized `PointsEarned` during entity creation with `_pointsService.CalculatePoints(...)` instead of setting `0`, ensuring `PointsEarned` is calculated upfront.
+- [`frontend/src/pages/LogRunPage.tsx`](file:///d:/App/RunStreak/frontend/src/pages/LogRunPage.tsx): Added fallback property extraction for camelCase and PascalCase (`pointsEarned` / `PointsEarned`, `run` / `Run`, `newlyUnlockedBadges` / `NewlyUnlockedBadges`).
+
+---
+
+## Follow-up Prompt 6 — Dynamic Theme Adaptive Showcase
+
+> Do not display both dark and light modes at the same time at the login page; instead, dynamically detect and display the appropriate theme based on the user's browser or operating system preferences.
+
+*Agent produced:*
+- [`frontend/src/components/ui/AppShowcase.tsx`](file:///d:/App/RunStreak/frontend/src/components/ui/AppShowcase.tsx): Updated to read `resolvedTheme` from `useThemeStore` (which respects system `prefers-color-scheme`). Replaced the dual-phone side-by-side display with a single phone frame dynamically rendering in dark or light mode based on the user's OS/browser theme preference.
+
+## Build & Test Result
+- `npm run build` — zero TypeScript errors, zero warnings.
+- `dotnet test` — 38/38 tests passed.
+
+---
+
+## Follow-up Prompt 7 — Mobile Responsiveness Audit & Optimization
+
+> Please audit and review the mobile responsiveness across all pages and screens. Specifically, the dashboard / main landing view immediately following user login does not appear to be properly optimized for mobile layouts.
+
+*Agent produced:*
+- [`frontend/src/pages/DashboardPage.tsx`](file:///d:/App/RunStreak/frontend/src/pages/DashboardPage.tsx):
+  - Refactored hero CTA buttons (`Share Stats` and `Log Run`) from rigid fixed-padding `.btn-lg` to responsive button sizes (`btn-md sm:btn-lg`) with full-width flex allocation (`flex-1 sm:flex-initial`) on narrow viewports (`< sm`), preventing button crowding and horizontal overflow.
+  - Converted the Rest Day Ticket purchase panel to full-width (`w-full md:w-auto`) on mobile viewports for clean card alignment.
+  - Adjusted page padding (`px-3.5 sm:px-6`) and spacing throughout for small mobile screens ($320\text{px} - 390\text{px}$).
+- [`frontend/src/components/ui/PersonalRecords.tsx`](file:///d:/App/RunStreak/frontend/src/components/ui/PersonalRecords.tsx):
+  - Converted 3-column layout to a responsive vertical stack on mobile (`grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x`), eliminating `PB!` badge overlaps and value text clipping on small screens.
+- [`frontend/src/components/ui/WeeklyProgress.tsx`](file:///d:/App/RunStreak/frontend/src/components/ui/WeeklyProgress.tsx):
+  - Made goal setting form responsive (`w-full sm:w-auto sm:ml-auto`) to prevent input fields from overflowing card boundaries on mobile screens.
+
+
+
