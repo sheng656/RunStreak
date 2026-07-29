@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { Flame, Trophy, MapPin, Zap, Award, ChevronLeft, ChevronRight } from 'lucide-react'
+import { useThemeStore } from '../../stores/themeStore'
 
 interface ShowcaseSlide {
   id: string
@@ -384,6 +385,11 @@ export default function AppShowcase({ compact = false }: AppShowcaseProps) {
   const [direction, setDirection] = useState<'next' | 'prev'>('next')
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
+  // Detect the user's OS/browser theme preference via the persisted store
+  // (which also respects 'system' preference via matchMedia).
+  const { resolvedTheme } = useThemeStore()
+  const phoneMode: 'dark' | 'light' = resolvedTheme === 'dark' ? 'dark' : 'light'
+
   function startTimer() {
     if (timerRef.current) clearInterval(timerRef.current)
     timerRef.current = setInterval(() => advance('next'), 4500)
@@ -428,8 +434,17 @@ export default function AppShowcase({ compact = false }: AppShowcaseProps) {
     transition: 'opacity 0.28s ease, transform 0.28s ease',
   }
 
+  // Inactive dot colour adapts to the theme so it stays visible on both backgrounds
+  const inactiveDotClass = phoneMode === 'dark'
+    ? 'bg-slate-700 hover:bg-slate-500'
+    : 'bg-slate-300 hover:bg-slate-400'
+
+  const arrowClass = phoneMode === 'dark'
+    ? 'bg-white/5 hover:bg-white/10 border-white/10 text-slate-400 hover:text-white'
+    : 'bg-black/5 hover:bg-black/10 border-black/10 text-slate-500 hover:text-slate-800'
+
   return (
-    <div className={`relative w-full mx-auto flex flex-col items-center ${compact ? 'max-w-sm' : 'max-w-lg py-2'}`}>
+    <div className={`relative w-full mx-auto flex flex-col items-center ${compact ? 'max-w-xs' : 'max-w-sm py-2'}`}>
       {/* Slide tag pill */}
       <div
         className="mb-4 inline-flex items-center gap-1.5 px-3 py-1 rounded-full border text-xs font-semibold shadow-md transition-all duration-500"
@@ -443,46 +458,16 @@ export default function AppShowcase({ compact = false }: AppShowcaseProps) {
         <span>{slide.tag}</span>
       </div>
 
-      {/*
-        Two-phone layout.
-        On desktop (full): side-by-side with labels.
-        On compact (mobile): side-by-side but smaller, no labels.
-        The outer div has a fixed min-height so the nav dots don't shift when
-        slide content height varies.
-      */}
-      <div
-        className="flex items-end justify-center gap-3 sm:gap-4 w-full"
-        style={contentStyle}
-      >
-        {/* Dark phone */}
-        <div className="flex flex-col items-center gap-1.5">
-          {!compact && (
-            <span className="text-[10px] text-slate-500 font-medium tracking-wide uppercase">Dark</span>
-          )}
-          <PhoneFrame
-            mode="dark"
-            float={!compact}
-            accentColor={slide.accentColor}
-            floatDelay="0s"
-          >
-            {slide.renderDark()}
-          </PhoneFrame>
-        </div>
-
-        {/* Light phone */}
-        <div className="flex flex-col items-center gap-1.5">
-          {!compact && (
-            <span className="text-[10px] text-slate-500 font-medium tracking-wide uppercase">Light</span>
-          )}
-          <PhoneFrame
-            mode="light"
-            float={!compact}
-            accentColor={slide.accentColor}
-            floatDelay="2s"
-          >
-            {slide.renderLight()}
-          </PhoneFrame>
-        </div>
+      {/* Single phone — rendered in the user's detected theme */}
+      <div style={contentStyle}>
+        <PhoneFrame
+          mode={phoneMode}
+          float={!compact}
+          accentColor={slide.accentColor}
+          floatDelay="0s"
+        >
+          {phoneMode === 'dark' ? slide.renderDark() : slide.renderLight()}
+        </PhoneFrame>
       </div>
 
       {/* Nav controls */}
@@ -490,7 +475,7 @@ export default function AppShowcase({ compact = false }: AppShowcaseProps) {
         <button
           type="button"
           onClick={handlePrev}
-          className="p-1.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-slate-400 hover:text-white transition-all"
+          className={`p-1.5 rounded-full border transition-all ${arrowClass}`}
           aria-label="Previous slide"
         >
           <ChevronLeft size={16} />
@@ -504,7 +489,7 @@ export default function AppShowcase({ compact = false }: AppShowcaseProps) {
               onClick={() => handleDot(idx)}
               style={idx === currentIndex ? { background: slide.accentColor } : undefined}
               className={`h-2 rounded-full transition-all duration-300 cursor-pointer ${
-                idx === currentIndex ? 'w-6' : 'w-2 bg-slate-700 hover:bg-slate-500'
+                idx === currentIndex ? 'w-6' : `w-2 ${inactiveDotClass}`
               }`}
               aria-label={`Go to slide ${idx + 1}`}
             />
@@ -514,7 +499,7 @@ export default function AppShowcase({ compact = false }: AppShowcaseProps) {
         <button
           type="button"
           onClick={handleNext}
-          className="p-1.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-slate-400 hover:text-white transition-all"
+          className={`p-1.5 rounded-full border transition-all ${arrowClass}`}
           aria-label="Next slide"
         >
           <ChevronRight size={16} />
