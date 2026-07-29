@@ -51,3 +51,31 @@ The homepage is fully theme-aware:
 
 ## Build result
 `npm run build` — zero TypeScript errors, zero warnings.
+
+---
+
+## Follow-up Prompt 3 — Bug fixes & dual phone showcase
+
+> When generating the card, the message "Generating card image..." keeps displaying and flashing. In the preview modal, the QR code is visible. However, if the image is downloaded while it is still flashing, the resulting card image is missing the QR code. Once the flashing stops and image generation completes, the newly downloaded image correctly includes the QR code, along with all other accurate information.
+>
+> Additionally, the current screenshots on the landing page are all captured in dark mode; separate screenshots for light mode are needed to make it look much better. Furthermore, on mobile layouts, changes in screenshot height cause the input form to shift up and down awkwardly, which needs to be fixed.
+
+*Agent produced:*
+
+1. **`useShareCard.ts`** — root-cause fix for QR flashing:
+   - Added a **module-level QR image singleton** (`qrImageCache` + `qrLoadPromise`). The image is fetched once per page lifetime and reused — no more repeated async round-trips causing re-render loops.
+   - Replaced `useCallback` object-reference dependencies (`user`, `badge`, `run`, etc.) with **`JSON.stringify`-derived string keys** so `drawCard` only re-fires when data genuinely changes, not on every parent re-render.
+   - `downloadImage` now **guards on `isGenerating`** — it returns early if the canvas is still being drawn.
+
+2. **`ShareCard.tsx`** — Download button disabled with `disabled={isGenerating}` + tooltip "Please wait — card is still rendering…".
+
+3. **`AppShowcase.tsx`** — Full rewrite to dual-phone layout:
+   - Two `PhoneFrame` components side-by-side: `mode="dark"` (slate-900) and `mode="light"` (white)
+   - Each slide has `renderDark()` and `renderLight()` — identical data, opposite colour tokens
+   - Float animation offset: dark phone at `animationDelay: 0s`, light phone at `2s` for a natural staggered bob
+   - Dark/Light labels shown in full (desktop) mode, hidden in compact mode
+
+4. **`LoginPage.tsx`** — Mobile showcase wrapper given `h-72 flex items-center justify-center overflow-hidden` to prevent the login form from shifting when slide content height changes.
+
+## Build result (follow-up)
+`npm run build` — zero TypeScript errors, zero warnings.
