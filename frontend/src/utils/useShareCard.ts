@@ -12,6 +12,30 @@ interface UseShareCardOptions {
   challengeName?: string
 }
 
+// ── QR image singleton ──────────────────────────────────────────────────────
+// Load the QR code once for the lifetime of the page and reuse it.
+// This prevents the repeated async fetch that caused the "flashing" regeneration.
+let qrImageCache: HTMLImageElement | null = null
+let qrLoadPromise: Promise<HTMLImageElement | null> | null = null
+
+function getQrImage(): Promise<HTMLImageElement | null> {
+  if (qrImageCache) return Promise.resolve(qrImageCache)
+  if (qrLoadPromise) return qrLoadPromise
+
+  qrLoadPromise = new Promise<HTMLImageElement | null>((resolve) => {
+    const img = new Image()
+    img.crossOrigin = 'anonymous'
+    img.src =
+      'https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=https://runstreak.sheng.nz&color=38bdf8&bgcolor=0f172a'
+    img.onload = () => {
+      qrImageCache = img
+      resolve(img)
+    }
+    img.onerror = () => resolve(null)
+  })
+  return qrLoadPromise
+}
+
 export function useShareCard({
   variant,
   user,
@@ -22,6 +46,15 @@ export function useShareCard({
 }: UseShareCardOptions) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const [isGenerating, setIsGenerating] = useState(true)
+
+  // Serialise props to stable strings so drawCard only re-runs when the data
+  // actually changes — not on every parent render that passes new object refs.
+  const variantKey = variant
+  const userKey = JSON.stringify(user ?? null)
+  const statsKey = JSON.stringify(stats ?? null)
+  const badgeKey = JSON.stringify(badge ?? null)
+  const runKey = JSON.stringify(run ?? null)
+  const challengeKey = challengeName ?? ''
 
   const drawCard = useCallback(async () => {
     const canvas = canvasRef.current
@@ -45,7 +78,7 @@ export function useShareCard({
     ctx.fillStyle = bgGradient
     ctx.fillRect(0, 0, width, height)
 
-    // Decorative grid circles
+    // Decorative grid lines
     ctx.strokeStyle = 'rgba(56, 189, 248, 0.05)'
     ctx.lineWidth = 1
     for (let i = 0; i < width; i += 60) {
@@ -87,13 +120,13 @@ export function useShareCard({
     ctx.fillStyle = '#38bdf8'
     ctx.font = '700 16px Inter, sans-serif'
     ctx.textAlign = 'center'
-    const tagText = variant === 'profile' ? 'PROFILE STATS' : variant === 'badge' ? 'BADGE UNLOCKED' : 'RUN LOGGED'
+    const tagText =
+      variant === 'profile' ? 'PROFILE STATS' : variant === 'badge' ? 'BADGE UNLOCKED' : 'RUN LOGGED'
     ctx.fillText(tagText, width - 150, 76)
-    ctx.textAlign = 'left' // reset alignment
+    ctx.textAlign = 'left' // reset
 
     // 3. Variant Specific Content
     if (variant === 'profile' && user) {
-      // User Profile Info
       ctx.fillStyle = '#ffffff'
       ctx.font = '800 38px Inter, sans-serif'
       ctx.fillText(user.displayName || user.username, 60, 190)
@@ -102,7 +135,6 @@ export function useShareCard({
       ctx.font = '500 20px Inter, sans-serif'
       ctx.fillText(`@${user.username} · Member of RunStreak Community`, 60, 225)
 
-      // Stats Grid (4 Boxes)
       const boxes = [
         { label: 'CURRENT STREAK', val: `${user.currentStreak} Days 🔥`, color: '#f97316' },
         { label: 'TOTAL DISTANCE', val: `${Number(user.totalDistanceKm).toFixed(1)} km 🏃`, color: '#38bdf8' },
@@ -124,7 +156,6 @@ export function useShareCard({
         ctx.lineWidth = 1.5
         ctx.stroke()
 
-        // Left accent strip
         ctx.fillStyle = box.color
         ctx.beginPath()
         ctx.roundRect(x + 4, y + 16, 6, h - 32, 3)
@@ -139,7 +170,6 @@ export function useShareCard({
         ctx.fillText(box.val, x + 28, y + 84)
       })
     } else if (variant === 'badge' && badge) {
-      // Badge Unlock Card
       ctx.fillStyle = '#a855f7'
       ctx.font = '800 24px Inter, sans-serif'
       ctx.fillText('🏆 ACHIEVEMENT UNLOCKED', 60, 180)
@@ -152,7 +182,6 @@ export function useShareCard({
       ctx.font = '500 22px Inter, sans-serif'
       ctx.fillText(badge.description, 60, 285)
 
-      // Badge Details Box
       ctx.fillStyle = 'rgba(30, 41, 59, 0.8)'
       ctx.beginPath()
       ctx.roundRect(60, 320, 1080, 170, 20)
@@ -174,7 +203,6 @@ export function useShareCard({
       const runnerName = user?.displayName || user?.username || 'Runner'
       ctx.fillText(`Unlocked by ${runnerName}`, 100, 440)
     } else if (variant === 'run' && run) {
-      // Run Completion Card
       ctx.fillStyle = '#ffffff'
       ctx.font = '900 72px Inter, sans-serif'
       const distStr = `${Number(run.distanceKm).toFixed(2)} KM`
@@ -191,7 +219,6 @@ export function useShareCard({
         ctx.fillText(`📍 Trail Progress: ${challengeName}`, 60, 305)
       }
 
-      // Stats Banner
       ctx.fillStyle = 'rgba(30, 41, 59, 0.8)'
       ctx.beginPath()
       ctx.roundRect(60, 340, 1080, 150, 20)
@@ -203,7 +230,12 @@ export function useShareCard({
 
       ctx.fillStyle = '#cbd5e1'
       ctx.font = '500 20px Inter, sans-serif'
-      const dateFormatted = new Date(run.runDate).toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' })
+      const dateFormatted = new Date(run.runDate).toLocaleDateString(undefined, {
+        weekday: 'long',
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+      })
       ctx.fillText(`Completed on ${dateFormatted}`, 100, 450)
     }
 
@@ -212,30 +244,27 @@ export function useShareCard({
     ctx.font = '600 16px Inter, sans-serif'
     ctx.fillText('Scan QR to join & track your runs at runstreak.sheng.nz', 60, 565)
 
-    // Load & draw QR code image from public API
+    // Load QR from singleton cache — no repeated network round-trips
     try {
-      const qrImg = new Image()
-      qrImg.crossOrigin = 'anonymous'
-      qrImg.src = 'https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=https://runstreak.sheng.nz&color=38bdf8&bgcolor=0f172a'
-      await new Promise((resolve) => {
-        qrImg.onload = () => {
-          ctx.drawImage(qrImg, width - 160, height - 140, 100, 100)
-          resolve(true)
-        }
-        qrImg.onerror = () => resolve(false)
-      })
+      const qrImg = await getQrImage()
+      if (qrImg) {
+        ctx.drawImage(qrImg, width - 160, height - 140, 100, 100)
+      }
     } catch {
-      // QR code fallback if offline
+      // QR code silently omitted if fetch failed
     }
 
     setIsGenerating(false)
-  }, [variant, user, stats, badge, run, challengeName])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [variantKey, userKey, statsKey, badgeKey, runKey, challengeKey])
 
   useEffect(() => {
     drawCard()
   }, [drawCard])
 
+  // Only allow download after the canvas is fully drawn (QR included)
   const downloadImage = () => {
+    if (isGenerating) return
     const canvas = canvasRef.current
     if (!canvas) return
     canvas.toBlob((blob) => {

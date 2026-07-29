@@ -88,6 +88,8 @@ export default function ShareCard({
           <button
             type="button"
             onClick={handleDownload}
+            disabled={isGenerating}
+            title={isGenerating ? 'Please wait — card is still rendering…' : 'Download PNG'}
             className="btn btn-primary flex items-center justify-center gap-2"
           >
             <Download size={18} />

@@ -119,7 +119,7 @@ export default function LoginPage() {
             </div>
 
             {/* Showcase — compact on mobile, full on desktop */}
-            <div className="md:hidden w-full max-w-xs mx-auto mb-2">
+            <div className="md:hidden w-full max-w-sm mx-auto mb-2 h-72 flex items-center justify-center overflow-hidden">
               <AppShowcase compact />
             </div>
             <div className="hidden md:block w-full">
