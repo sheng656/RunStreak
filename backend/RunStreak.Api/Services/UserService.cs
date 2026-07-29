@@ -109,6 +109,12 @@ public class UserService(AppDbContext context, IStreakService streakService) : I
             .Select(r => new { r.DistanceKm, r.PaceMinPerKm })
             .ToListAsync();
 
+        var completedChallenges = await _context.UserChallenges
+            .AsNoTracking()
+            .Where(uc => uc.UserId == userId && uc.CompletedAt != null)
+            .Select(uc => uc.ChallengeId)
+            .ToListAsync();
+
         var result = new List<BadgeWithProgressDto>();
 
         foreach (var badge in badges)
@@ -169,6 +175,15 @@ public class UserService(AppDbContext context, IStreakService streakService) : I
                                 currentProgress = runs.Count(r => r.DistanceKm >= criteria.MinDistanceKm);
                                 targetThreshold = criteria.Count;
                                 progressLabel = $"{Math.Min(currentProgress, targetThreshold)} / {targetThreshold} runs";
+                                break;
+
+                            case "challenge_count":
+                                if (criteria.ChallengeId.HasValue)
+                                {
+                                    currentProgress = completedChallenges.Count(id => id == criteria.ChallengeId.Value);
+                                    targetThreshold = criteria.Count;
+                                    progressLabel = $"{Math.Min(currentProgress, targetThreshold)} / {targetThreshold} times";
+                                }
                                 break;
                         }
                     }

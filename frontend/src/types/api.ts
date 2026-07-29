@@ -211,6 +211,7 @@ export interface Challenge {
   completionPercentage: number
   startedAt: string | null
   completedAt: string | null
+  completionCount: number
 }
 
 export interface ActiveChallengeSummary {

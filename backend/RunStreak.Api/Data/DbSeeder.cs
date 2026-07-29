@@ -12,8 +12,7 @@ namespace RunStreak.Api.Data;
 /// </summary>
 public static class DbSeeder
 {
-    // Bump this when adding new badges so the re-seed trigger fires.
-    private const int ExpectedBadgeCount = 48;
+    private const int ExpectedBadgeCount = 112; // 48 standard + 16 * 4 challenge badges
 
     // Bump this when adding new challenges so the re-seed trigger fires.
     private const int ExpectedChallengeCount = 16;
@@ -423,6 +422,46 @@ public static class DbSeeder
             },
         };
 
+        foreach (var challenge in GetChallengeDefinitions())
+        {
+            badges.Add(new Badge
+            {
+                Name = $"{challenge.Name} (Bronze)",
+                Description = $"Complete the {challenge.Name} challenge 1 time.",
+                IconUrl = challenge.IconUrl,
+                Category = "challenge", Rarity = "common",
+                CriteriaJson = $"{{\"type\":\"challenge_count\",\"challengeId\":\"{challenge.Id}\",\"count\":1}}",
+                PointsReward = 100
+            });
+            badges.Add(new Badge
+            {
+                Name = $"{challenge.Name} (Silver)",
+                Description = $"Complete the {challenge.Name} challenge 3 times.",
+                IconUrl = challenge.IconUrl,
+                Category = "challenge", Rarity = "rare",
+                CriteriaJson = $"{{\"type\":\"challenge_count\",\"challengeId\":\"{challenge.Id}\",\"count\":3}}",
+                PointsReward = 250
+            });
+            badges.Add(new Badge
+            {
+                Name = $"{challenge.Name} (Gold)",
+                Description = $"Complete the {challenge.Name} challenge 5 times.",
+                IconUrl = challenge.IconUrl,
+                Category = "challenge", Rarity = "epic",
+                CriteriaJson = $"{{\"type\":\"challenge_count\",\"challengeId\":\"{challenge.Id}\",\"count\":5}}",
+                PointsReward = 500
+            });
+            badges.Add(new Badge
+            {
+                Name = $"{challenge.Name} (Diamond)",
+                Description = $"Complete the {challenge.Name} challenge 10 times. Absolute mastery!",
+                IconUrl = challenge.IconUrl,
+                Category = "challenge", Rarity = "legendary",
+                CriteriaJson = $"{{\"type\":\"challenge_count\",\"challengeId\":\"{challenge.Id}\",\"count\":10}}",
+                PointsReward = 1000
+            });
+        }
+
         context.Badges.AddRange(badges);
         await context.SaveChangesAsync();
     }
@@ -458,10 +497,20 @@ public static class DbSeeder
             await context.SaveChangesAsync();
         }
 
-        var challenges = new List<Challenge>
+        var challenges = GetChallengeDefinitions();
+
+        context.Challenges.AddRange(challenges);
+        await context.SaveChangesAsync();
+    }
+
+    // Known demo usernames — only these get refreshed, never real user accounts created via registration.
+    private static List<Challenge> GetChallengeDefinitions()
+    {
+        return new List<Challenge>
         {
             new()
             {
+                Id = new("d244a179-8eb4-4ec5-b6d3-9bc3f6314f8a"),
                 Name = "Park Run Challenge",
                 Description = "Complete a cumulative 5km distance. Perfect for getting started!",
                 TargetDistanceKm = 5.0m,
@@ -471,6 +520,7 @@ public static class DbSeeder
             },
             new()
             {
+                Id = new("4f19b221-39c2-498c-8c65-0a8b98b90ec2"),
                 Name = "Rangitoto Summit Track",
                 Description = "Conquer Auckland's iconic volcanic island hike across lava fields to the summit (8km).",
                 TargetDistanceKm = 8.0m,
@@ -480,6 +530,7 @@ public static class DbSeeder
             },
             new()
             {
+                Id = new("ab45218d-6e8a-41f2-bc22-cf8b12f45cc3"),
                 Name = "City Loop Challenge",
                 Description = "Cover a cumulative 10km across your daily runs to conquer the City Loop.",
                 TargetDistanceKm = 10.0m,
@@ -489,6 +540,7 @@ public static class DbSeeder
             },
             new()
             {
+                Id = new("8a7b931e-4512-4c2f-9271-e2a87b3a7491"),
                 Name = "Auckland Coast to Coast Walkway",
                 Description = "Traverse Auckland from the Waitematā Harbour to the Manukau Harbour (16km).",
                 TargetDistanceKm = 16.0m,
@@ -498,6 +550,7 @@ public static class DbSeeder
             },
             new()
             {
+                Id = new("3f1246c5-2882-441f-82bb-76f5b905f377"),
                 Name = "Half Marathon Route",
                 Description = "Tackle 21.1km total distance. Every step builds toward half-marathon glory.",
                 TargetDistanceKm = 21.1m,
@@ -507,6 +560,7 @@ public static class DbSeeder
             },
             new()
             {
+                Id = new("1c7755b3-d667-4f61-b75f-2a3b918f6f4d"),
                 Name = "Waitākere Ranges Loop",
                 Description = "Explore 25km of lush rainforest and coastal views in Auckland's western ranges.",
                 TargetDistanceKm = 25.0m,
@@ -516,6 +570,7 @@ public static class DbSeeder
             },
             new()
             {
+                Id = new("e685f0b1-4f3b-4835-a7b5-0c6a2d9c125a"),
                 Name = "Routeburn Track",
                 Description = "Conquer 32km of world-famous alpine crossing between Mt Aspiring and Fiordland.",
                 TargetDistanceKm = 32.0m,
@@ -525,6 +580,7 @@ public static class DbSeeder
             },
             new()
             {
+                Id = new("58f4a38d-8a5e-4c75-9c87-a2f4791557d1"),
                 Name = "Marathon Expedition",
                 Description = "Accumulate 42.2km total. The classic marathon distance broken into your daily runs.",
                 TargetDistanceKm = 42.2m,
@@ -534,6 +590,7 @@ public static class DbSeeder
             },
             new()
             {
+                Id = new("823a079c-b17f-4428-a6d0-42f896b7cd36"),
                 Name = "Milford Track",
                 Description = "Tackle 53.5km inspired by New Zealand's 'finest walk in the world' through Fiordland.",
                 TargetDistanceKm = 53.5m,
@@ -543,6 +600,7 @@ public static class DbSeeder
             },
             new()
             {
+                Id = new("c284e311-b582-4f93-bc4e-1a89c45b7f19"),
                 Name = "Abel Tasman Coast Track",
                 Description = "Run 60km along golden beaches and turquoise lagoons at the top of the South Island.",
                 TargetDistanceKm = 60.0m,
@@ -552,6 +610,7 @@ public static class DbSeeder
             },
             new()
             {
+                Id = new("9c3f1545-8f6a-4b95-a28a-cfb3d7b2f5d4"),
                 Name = "Kepler Track",
                 Description = "A panoramic 60km loop through beech forests and ridge-top alpine tussock.",
                 TargetDistanceKm = 60.0m,
@@ -561,6 +620,7 @@ public static class DbSeeder
             },
             new()
             {
+                Id = new("38a0f9a2-5f65-4f31-8f55-6b79c3d4a211"),
                 Name = "Coast to Coast",
                 Description = "Run 100km cumulatively to cross the country from sea to sea.",
                 TargetDistanceKm = 100.0m,
@@ -570,6 +630,7 @@ public static class DbSeeder
             },
             new()
             {
+                Id = new("6b8e3914-1e5b-4839-a9a7-3e5f29b6a715"),
                 Name = "Tongariro Crossing",
                 Description = "Conquer 150km of volcanic terrain inspired by New Zealand's famous alpine crossing.",
                 TargetDistanceKm = 150.0m,
@@ -579,6 +640,7 @@ public static class DbSeeder
             },
             new()
             {
+                Id = new("9a2f7c6d-5b3a-4427-b8f9-4d6f83a2153c"),
                 Name = "Tour de New Zealand",
                 Description = "A monumental 300km journey across the North and South islands.",
                 TargetDistanceKm = 300.0m,
@@ -588,6 +650,7 @@ public static class DbSeeder
             },
             new()
             {
+                Id = new("f741d8e2-63b5-4138-a3f5-6a8b79d2f4c1"),
                 Name = "Trans-Alpine Expedition",
                 Description = "The ultimate 500km ultra-endurance challenge. For true legends.",
                 TargetDistanceKm = 500.0m,
@@ -597,6 +660,7 @@ public static class DbSeeder
             },
             new()
             {
+                Id = new("1283c749-3a6f-4712-b3e1-5c8f6b2a9d71"),
                 Name = "Te Araroa Trail",
                 Description = "The ultimate 3,000km epic expedition spanning the entire length of New Zealand from Cape Reinga to Bluff.",
                 TargetDistanceKm = 3000.0m,
@@ -605,9 +669,6 @@ public static class DbSeeder
                 SortOrder = 16
             }
         };
-
-        context.Challenges.AddRange(challenges);
-        await context.SaveChangesAsync();
     }
 
     // Known demo usernames — only these get refreshed, never real user accounts created via registration.

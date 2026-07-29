@@ -13,7 +13,11 @@ public class BadgeCriteria
     public decimal MinDistanceKm { get; set; }
 
     // For "distance_count": user must have completed at least Count runs of >= MinDistanceKm
+    // For "challenge_count": user must have completed the challenge Count times
     public int Count { get; set; }
+
+    // For "challenge_count"
+    public Guid? ChallengeId { get; set; }
 }
 
 public class BadgeService(AppDbContext context) : IBadgeService
@@ -94,6 +98,16 @@ public class BadgeService(AppDbContext context) : IBadgeService
                         var qualifyingRunCount = await _context.Runs
                             .CountAsync(r => r.UserId == userId && r.DistanceKm >= criteria.MinDistanceKm);
                         isUnlocked = qualifyingRunCount >= criteria.Count;
+                        break;
+
+                    case "challenge_count":
+                        // User must have completed ChallengeId at least Count times.
+                        if (criteria.ChallengeId.HasValue)
+                        {
+                            var challengeCount = await _context.UserChallenges
+                                .CountAsync(uc => uc.UserId == userId && uc.ChallengeId == criteria.ChallengeId.Value && uc.CompletedAt != null);
+                            isUnlocked = challengeCount >= criteria.Count;
+                        }
                         break;
                 }
 

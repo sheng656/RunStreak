@@ -55,6 +55,7 @@ export default function BadgeCelebrationPage() {
   
   // Retrieve passed data from router state
   const badges: Badge[] = location.state?.badges || []
+  const pointsEarned: number = location.state?.pointsEarned || 0
 
   const [currentIndex, setCurrentIndex] = useState(0)
   const [animate, setAnimate] = useState(false)
@@ -161,9 +162,17 @@ export default function BadgeCelebrationPage() {
         </div>
 
         {/* Reward presentation */}
-        <div className="inline-flex items-center gap-2 bg-amber-500/10 border border-amber-500/20 rounded-xl px-4 py-2 text-amber-400 animate-pulse">
-          <Zap size={16} />
-          <span className="text-sm font-semibold tracking-wide">+{currentBadge.pointsReward} Bonus Points</span>
+        <div className="flex flex-col gap-2 items-center">
+          {pointsEarned > 0 && isLast && (
+            <div className="inline-flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 rounded-xl px-4 py-2 text-emerald-400">
+              <Zap size={16} />
+              <span className="text-sm font-semibold tracking-wide">+{pointsEarned} Run Points</span>
+            </div>
+          )}
+          <div className="inline-flex items-center gap-2 bg-amber-500/10 border border-amber-500/20 rounded-xl px-4 py-2 text-amber-400 animate-pulse">
+            <Zap size={16} />
+            <span className="text-sm font-semibold tracking-wide">+{currentBadge.pointsReward} Bonus Points</span>
+          </div>
         </div>
 
         {/* Navigation Actions */}

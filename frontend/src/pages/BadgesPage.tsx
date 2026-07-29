@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Medal, Trophy, Star, MapPin, Flame, Award, Lock, Sparkles, Share2 } from 'lucide-react'
+import { Medal, Trophy, Star, MapPin, Flame, Award, Lock, Sparkles, Share2, Compass } from 'lucide-react'
 import usersApi from '../api/users'
 import LoadingSpinner from '../components/ui/LoadingSpinner'
 import EmptyState from '../components/ui/EmptyState'
@@ -11,6 +11,7 @@ const categoryIcons: Record<string, typeof Trophy> = {
   streak: Flame,
   milestone: Star,
   special: Award,
+  challenge: Compass,
 }
 
 const RARITY_DESCRIPTIONS: Record<BadgeRarity, { border: string; glow: string; text: string; bg: string; label: string }> = {
@@ -81,7 +82,7 @@ export default function BadgesPage() {
   }
 
   // Filter lists
-  const categories = ['all', 'distance', 'streak', 'milestone', 'special']
+  const categories = ['all', 'distance', 'streak', 'milestone', 'special', 'challenge']
   const rarities = ['all', 'common', 'rare', 'epic', 'legendary', 'heroic']
 
   // Apply filters
@@ -98,7 +99,7 @@ export default function BadgesPage() {
 
   // Group by category for visual sections
   const categoriesToRender = activeCategory === 'all' 
-    ? ['distance', 'streak', 'milestone', 'special']
+    ? ['distance', 'streak', 'milestone', 'special', 'challenge']
     : [activeCategory]
 
   return (
@@ -189,6 +190,7 @@ export default function BadgesPage() {
                     {cat === 'streak' && <Flame size={18} className="text-orange-500 animate-pulse" />}
                     {cat === 'milestone' && <Star size={18} className="text-yellow-500" />}
                     {cat === 'special' && <Award size={18} className="text-blue-500" />}
+                    {cat === 'challenge' && <Compass size={18} className="text-indigo-500" />}
                     {cat} Achievements
                   </h2>
                   <div className="flex items-center gap-3">

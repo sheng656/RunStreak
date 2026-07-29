@@ -1,20 +1,27 @@
 import { useEffect, useState } from 'react'
 import { Compass, CheckCircle, Flag, MapPin, Award, ArrowRight, Trophy, AlertTriangle, X } from 'lucide-react'
-import challengesApi from '../api/challenges'
+import usersApi from '../api/users'
 import LoadingSpinner from '../components/ui/LoadingSpinner'
+import ShareCard from '../components/ui/ShareCard'
 import toast from 'react-hot-toast'
-import type { Challenge } from '../types/api'
+import type { Challenge, BadgeWithProgress } from '../types/api'
 
 export default function ChallengesPage() {
   const [challenges, setChallenges] = useState<Challenge[]>([])
   const [loading, setLoading] = useState(true)
   const [startingId, setStartingId] = useState<string | null>(null)
   const [pendingChallenge, setPendingChallenge] = useState<Challenge | null>(null)
+  const [userBadges, setUserBadges] = useState<BadgeWithProgress[]>([])
+  const [selectedBadgeForShare, setSelectedBadgeForShare] = useState<BadgeWithProgress | null>(null)
 
   async function loadChallenges() {
     try {
-      const res = await challengesApi.list()
-      setChallenges(res.data)
+      const [challengesRes, badgesRes] = await Promise.all([
+        challengesApi.list(),
+        usersApi.getBadgesWithProgress()
+      ])
+      setChallenges(challengesRes.data)
+      setUserBadges(badgesRes.data)
     } catch {
       toast.error('Failed to load challenges')
     } finally {
@@ -139,6 +146,10 @@ export default function ChallengesPage() {
         {challenges.map((c) => {
           const isCurrentActive = c.isActive && !c.isCompleted
           const isCompleted = c.isCompleted
+          
+          const challengeBadges = userBadges.filter(b => b.category === 'challenge' && b.name.startsWith(c.name))
+          const unlockedChallengeBadges = challengeBadges.filter(b => b.isUnlocked)
+          const highestUnlockedBadge = unlockedChallengeBadges.sort((a, b) => b.targetThreshold - a.targetThreshold)[0]
 
           return (
             <div
@@ -184,11 +195,18 @@ export default function ChallengesPage() {
                     </div>
                   </div>
 
-                  {isCompleted && (
-                    <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20 shrink-0">
-                      <CheckCircle size={12} /> Finished
-                    </span>
-                  )}
+                  <div className="flex flex-col items-end gap-1 shrink-0">
+                    {c.completionCount > 0 && (
+                      <span className="text-[10px] font-bold text-[hsl(var(--color-brand))] bg-[hsl(var(--color-brand))]/10 px-2 py-0.5 rounded border border-[hsl(var(--color-brand))]/20">
+                        Completed ×{c.completionCount}
+                      </span>
+                    )}
+                    {isCompleted && (
+                      <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20">
+                        <CheckCircle size={10} /> Finished
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 <p className="text-xs text-[hsl(var(--color-text-muted))] leading-relaxed">
@@ -219,16 +237,30 @@ export default function ChallengesPage() {
               <div className="pt-4 mt-4 border-t border-[hsl(var(--color-border))]/40 flex items-center justify-between">
                 <div className="flex items-center gap-1.5 text-xs text-[hsl(var(--color-text-muted))]">
                   <Award size={14} className="text-amber-500" />
-                  <span>Challenge Badge</span>
+                  <span>
+                    {highestUnlockedBadge ? (
+                      <span className="text-amber-500 font-bold">{highestUnlockedBadge.name.split(' ').pop()} Tier</span>
+                    ) : (
+                      'Challenge Badge'
+                    )}
+                  </span>
                 </div>
 
-                {isCompleted ? (
-                  <span className="text-xs text-emerald-400 font-semibold">Unlocked</span>
-                ) : isCurrentActive ? (
-                  <span className="text-xs font-bold text-[hsl(var(--color-brand))] flex items-center gap-1">
-                    Active Challenge <ArrowRight size={12} />
-                  </span>
-                ) : (
+                <div className="flex items-center gap-2">
+                  {highestUnlockedBadge && (
+                    <button
+                      type="button"
+                      onClick={() => setSelectedBadgeForShare(highestUnlockedBadge)}
+                      className="text-xs font-bold text-[hsl(var(--color-brand))] flex items-center gap-1 hover:underline"
+                    >
+                      Share Badge
+                    </button>
+                  )}
+                  {isCurrentActive ? (
+                    <span className="text-xs font-bold text-[hsl(var(--color-brand))] flex items-center gap-1">
+                      Active Challenge <ArrowRight size={12} />
+                    </span>
+                  ) : (
                   <button
                     type="button"
                     disabled={startingId === c.id}
@@ -314,6 +346,15 @@ export default function ChallengesPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Share Badge Modal */}
+      {selectedBadgeForShare && (
+        <ShareCard
+          variant="badge"
+          badge={selectedBadgeForShare}
+          onClose={() => setSelectedBadgeForShare(null)}
+        />
       )}
     </div>
   )

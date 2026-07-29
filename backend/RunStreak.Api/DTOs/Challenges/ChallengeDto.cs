@@ -19,6 +19,7 @@ public class ChallengeDto
     public decimal CompletionPercentage { get; set; }
     public DateTime? StartedAt { get; set; }
     public DateTime? CompletedAt { get; set; }
+    public int CompletionCount { get; set; }
 }
 
 public class ActiveChallengeSummaryDto

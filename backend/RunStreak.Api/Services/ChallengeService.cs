@@ -25,7 +25,14 @@ public class ChallengeService(AppDbContext context) : IChallengeService
 
         foreach (var c in challenges)
         {
-            var userProgress = userChallenges.FirstOrDefault(uc => uc.ChallengeId == c.Id);
+            var userProgress = userChallenges
+                .Where(uc => uc.ChallengeId == c.Id)
+                .OrderByDescending(uc => uc.IsActive)
+                .ThenByDescending(uc => uc.CompletedAt == null)
+                .ThenByDescending(uc => uc.StartedAt)
+                .FirstOrDefault();
+
+            var completionCount = userChallenges.Count(uc => uc.ChallengeId == c.Id && uc.CompletedAt != null);
 
             bool isActive = userProgress?.IsActive ?? false;
             bool isCompleted = userProgress?.CompletedAt.HasValue ?? false;
@@ -48,7 +55,8 @@ public class ChallengeService(AppDbContext context) : IChallengeService
                 ProgressDistanceKm = Math.Round(progressKm, 2),
                 CompletionPercentage = percentage,
                 StartedAt = userProgress?.StartedAt,
-                CompletedAt = userProgress?.CompletedAt
+                CompletedAt = userProgress?.CompletedAt,
+                CompletionCount = completionCount
             });
         }
 
@@ -61,14 +69,11 @@ public class ChallengeService(AppDbContext context) : IChallengeService
         if (challenge == null) return false;
 
         var existingUserChallenge = await _context.UserChallenges
-            .FirstOrDefaultAsync(uc => uc.UserId == userId && uc.ChallengeId == challengeId);
+            .Where(uc => uc.UserId == userId && uc.ChallengeId == challengeId && uc.CompletedAt == null)
+            .FirstOrDefaultAsync();
 
         if (existingUserChallenge != null)
         {
-            if (existingUserChallenge.CompletedAt.HasValue)
-            {
-                return false; // Already completed
-            }
 
             // Reactivate if paused or not active
             // Deactivate any currently active challenge first
@@ -162,34 +167,6 @@ public class ChallengeService(AppDbContext context) : IChallengeService
             activeUc.ProgressDistanceKm = activeUc.Challenge.TargetDistanceKm;
             activeUc.CompletedAt = DateTime.UtcNow;
             activeUc.IsActive = false;
-
-            // Award associated badge if configured
-            if (activeUc.Challenge.BadgeId.HasValue)
-            {
-                bool badgeAlreadyEarned = await _context.UserBadges.AnyAsync(ub =>
-                    ub.UserId == userId && ub.BadgeId == activeUc.Challenge.BadgeId.Value);
-
-                if (!badgeAlreadyEarned)
-                {
-                    var userBadge = new UserBadge
-                    {
-                        UserId = userId,
-                        BadgeId = activeUc.Challenge.BadgeId.Value,
-                        UnlockedAt = DateTime.UtcNow
-                    };
-                    _context.UserBadges.Add(userBadge);
-
-                    var badge = await _context.Badges.FindAsync(activeUc.Challenge.BadgeId.Value);
-                    if (badge != null)
-                    {
-                        var user = await _context.Users.FindAsync(userId);
-                        if (user != null)
-                        {
-                            user.TotalPoints += badge.PointsReward;
-                        }
-                    }
-                }
-            }
         }
 
         await _context.SaveChangesAsync();
