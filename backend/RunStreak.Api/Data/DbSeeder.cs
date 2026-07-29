@@ -22,6 +22,20 @@ public static class DbSeeder
     {
         var currentCount = await context.Badges.CountAsync();
 
+        // Self-healing: fix broken icon URL if present in existing database
+        var brokenLightningBadges = await context.Badges
+            .Where(b => b.IconUrl.Contains("lightning.svg"))
+            .ToListAsync();
+
+        if (brokenLightningBadges.Count > 0)
+        {
+            foreach (var b in brokenLightningBadges)
+            {
+                b.IconUrl = "https://api.iconify.design/noto/high-voltage.svg";
+            }
+            await context.SaveChangesAsync();
+        }
+
         if (currentCount == ExpectedBadgeCount)
         {
             return; // Already seeded with the correct set
@@ -353,7 +367,7 @@ public static class DbSeeder
             {
                 Name = "10K Master",
                 Description = "Complete 50 runs of 10km or more. You've mastered the 10K.",
-                IconUrl = "https://api.iconify.design/noto/lightning.svg",
+                IconUrl = "https://api.iconify.design/noto/high-voltage.svg",
                 Category = "distance", Rarity = "heroic",
                 CriteriaJson = "{\"type\":\"distance_count\",\"minDistanceKm\":10.0,\"count\":50}",
                 PointsReward = 2000
@@ -366,7 +380,7 @@ public static class DbSeeder
             {
                 Name = "Speed Demon",
                 Description = "Maintain a pace under 5:00/km on a run of 5km or more.",
-                IconUrl = "https://api.iconify.design/noto/lightning.svg",
+                IconUrl = "https://api.iconify.design/noto/high-voltage.svg",
                 Category = "special", Rarity = "rare",
                 CriteriaJson = "{\"type\":\"pace_under\",\"paceThreshold\":5.0,\"minDistanceKm\":5.0}",
                 PointsReward = 300
