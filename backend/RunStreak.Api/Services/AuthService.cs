@@ -16,15 +16,18 @@ public class AuthService : IAuthService
     private readonly AppDbContext _context;
     private readonly IConfiguration _configuration;
     private readonly IPasswordHasher<User> _passwordHasher;
+    private readonly IEmailService _emailService;
 
     public AuthService(
         AppDbContext context,
         IConfiguration configuration,
-        IPasswordHasher<User> passwordHasher)
+        IPasswordHasher<User> passwordHasher,
+        IEmailService emailService)
     {
         _context = context;
         _configuration = configuration;
         _passwordHasher = passwordHasher;
+        _emailService = emailService;
     }
 
     public async Task<AuthResult?> RegisterAsync(RegisterRequest request)
@@ -219,6 +222,100 @@ public class AuthService : IAuthService
         }
 
         await _context.SaveChangesAsync();
+    }
+
+    public async Task<bool> RequestPasswordResetAsync(string email)
+    {
+        var normalizedEmail = email.Trim().ToLower();
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.Email.ToLower() == normalizedEmail);
+        
+        // Anti-user-enumeration: always return true even if user not found
+        if (user == null)
+        {
+            return true;
+        }
+
+        var rawToken = GenerateRawRefreshToken();
+        var hashedToken = HashToken(rawToken);
+
+        var resetTokenEntity = new PasswordResetToken
+        {
+            UserId = user.Id,
+            TokenHash = hashedToken,
+            ExpiresAt = DateTime.UtcNow.AddMinutes(15),
+            CreatedAt = DateTime.UtcNow
+        };
+
+        _context.PasswordResetTokens.Add(resetTokenEntity);
+        await _context.SaveChangesAsync();
+
+        await _emailService.SendPasswordResetEmailAsync(user.Email, rawToken, string.IsNullOrWhiteSpace(user.DisplayName) ? user.Username : user.DisplayName);
+        return true;
+    }
+
+    public async Task<bool> ResetPasswordAsync(string rawToken, string newPassword)
+    {
+        var hash = HashToken(rawToken);
+
+        var storedToken = await _context.PasswordResetTokens
+            .Include(prt => prt.User)
+            .FirstOrDefaultAsync(prt => prt.TokenHash == hash);
+
+        if (storedToken == null || storedToken.UsedAt != null || DateTime.UtcNow >= storedToken.ExpiresAt)
+        {
+            return false;
+        }
+
+        var user = storedToken.User;
+        storedToken.UsedAt = DateTime.UtcNow;
+
+        user.PasswordHash = _passwordHasher.HashPassword(user, newPassword);
+        user.UpdatedAt = DateTime.UtcNow;
+
+        await RevokeAllUserTokensAsync(user.Id);
+        await _context.SaveChangesAsync();
+
+        return true;
+    }
+
+    public async Task<bool> ChangePasswordAsync(Guid userId, string currentPassword, string newPassword)
+    {
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+        if (user == null)
+        {
+            return false;
+        }
+
+        var result = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, currentPassword);
+        if (result == PasswordVerificationResult.Failed)
+        {
+            return false;
+        }
+
+        user.PasswordHash = _passwordHasher.HashPassword(user, newPassword);
+        user.UpdatedAt = DateTime.UtcNow;
+
+        await RevokeAllUserTokensAsync(userId);
+        await _context.SaveChangesAsync();
+
+        return true;
+    }
+
+    public async Task<bool> ResetDemoAccountAsync()
+    {
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.Username.ToLower() == "testuser" || u.Email.ToLower() == "test@runstreak.app");
+        if (user == null)
+        {
+            return false;
+        }
+
+        user.PasswordHash = _passwordHasher.HashPassword(user, "Test1234!");
+        user.UpdatedAt = DateTime.UtcNow;
+
+        await RevokeAllUserTokensAsync(user.Id);
+        await _context.SaveChangesAsync();
+
+        return true;
     }
 
     private string GenerateAccessToken(User user)

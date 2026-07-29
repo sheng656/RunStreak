@@ -1,8 +1,8 @@
 # RunStreak — Project Plan (LIVE)
 
-> **Last updated:** 2026-07-28
-> **Current focus:** Editable Running Logs on Run History Page
-> **Overall status:** ✅ Phase 0-8 complete, Phase 10 complete, Phase 11 complete, Editable Running Logs added
+> **Last updated:** 2026-07-29
+> **Current focus:** Phase 12 — Shareable Cards, Password Reset (Resend), Demo UX & Showcase
+> **Overall status:** ✅ Phase 0-8 complete, Phase 10 complete, Phase 11 complete, Phase 12 complete
 
 
 This file is the single source of truth for what's done, what's in progress, and what's next. Agents must read it at the start of every session and update it at the end.
@@ -424,3 +424,5 @@ Phase 0 (scaffold)
 | 10 | Rolling 7-day leaderboard tab | Decided | `specs/decisions/008-rolling-7day-leaderboard.md` |
 | 11 | Timezone-agnostic RunDate and UTC+14 tolerance | Decided | `specs/decisions/009-rundate-timezone-fix.md` |
 | 12 | Visual Avatar Picker using 14 styles, 300+ seeds and DiceBear HTTP API | Decided | `specs/decisions/010-avatar-picker-dicebear.md` |
+| 13 | Shareable Brag Cards (Canvas API, OpenGraph 1200x630, QR Code) | Decided | `specs/decisions/013-shareable-brag-cards.md` |
+| 14 | Password Reset Flow & Resend REST Email Integration | Decided | `specs/decisions/014-password-reset-resend.md` |

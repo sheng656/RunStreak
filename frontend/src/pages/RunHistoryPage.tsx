@@ -1,12 +1,13 @@
 import { useEffect, useState, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { MapPin, Timer, Zap, Plus, ChevronLeft, ChevronRight,
-  Calendar, Trash2, Pencil,
+  Calendar, Trash2, Pencil, Share2,
 } from 'lucide-react'
 import runsApi from '../api/runs'
 import LoadingSpinner from '../components/ui/LoadingSpinner'
 import EmptyState from '../components/ui/EmptyState'
 import EditRunModal from '../components/runs/EditRunModal'
+import ShareCard from '../components/ui/ShareCard'
 import toast from 'react-hot-toast'
 import type { Run } from '../types/api'
 import { formatPace } from '../utils/formatPace'
@@ -19,6 +20,7 @@ export default function RunHistoryPage() {
   const [deleting, setDeleting] = useState<string | null>(null)
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
   const [editingRun, setEditingRun] = useState<Run | null>(null)
+  const [selectedRunForShare, setSelectedRunForShare] = useState<Run | null>(null)
   const pageSize = 10
   const totalPages = Math.ceil(totalCount / pageSize)
 
@@ -160,6 +162,13 @@ export default function RunHistoryPage() {
                     ) : (
                       <>
                         <button
+                          onClick={() => setSelectedRunForShare(run)}
+                          className="btn btn-ghost btn-icon text-[hsl(var(--color-text-muted))] hover:text-[hsl(var(--color-brand))]"
+                          title="Share run card"
+                        >
+                          <Share2 size={16} />
+                        </button>
+                        <button
                           onClick={() => setEditingRun(run)}
                           className="btn btn-ghost btn-icon text-[hsl(var(--color-text-muted))] hover:text-[hsl(var(--color-brand))]"
                           title="Edit run"
@@ -226,6 +235,14 @@ export default function RunHistoryPage() {
             setEditingRun(null)
             loadRuns()
           }}
+        />
+      )}
+      {/* Share Run Modal */}
+      {selectedRunForShare && (
+        <ShareCard
+          variant="run"
+          run={selectedRunForShare}
+          onClose={() => setSelectedRunForShare(null)}
         />
       )}
     </div>

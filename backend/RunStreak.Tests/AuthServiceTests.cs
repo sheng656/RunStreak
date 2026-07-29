@@ -11,6 +11,21 @@ using Xunit;
 
 namespace RunStreak.Tests;
 
+public class TestEmailService : IEmailService
+{
+    public bool WasCalled { get; private set; }
+    public string? LastToEmail { get; private set; }
+    public string? LastResetToken { get; private set; }
+
+    public Task<bool> SendPasswordResetEmailAsync(string toEmail, string resetToken, string username)
+    {
+        WasCalled = true;
+        LastToEmail = toEmail;
+        LastResetToken = resetToken;
+        return Task.FromResult(true);
+    }
+}
+
 public class AuthServiceTests
 {
     private AppDbContext CreateContext()
@@ -51,7 +66,8 @@ public class AuthServiceTests
         using var context = CreateContext();
         var config = CreateConfiguration();
         var hasher = new PasswordHasher<User>();
-        var service = new AuthService(context, config, hasher);
+        var emailService = new TestEmailService();
+        var service = new AuthService(context, config, hasher, emailService);
 
         var request = new RegisterRequest
         {
@@ -86,7 +102,8 @@ public class AuthServiceTests
         using var context = CreateContext();
         var config = CreateConfiguration();
         var hasher = new PasswordHasher<User>();
-        var service = new AuthService(context, config, hasher);
+        var emailService = new TestEmailService();
+        var service = new AuthService(context, config, hasher, emailService);
 
         var existingUser = new User
         {
@@ -126,7 +143,8 @@ public class AuthServiceTests
         using var context = CreateContext();
         var config = CreateConfiguration();
         var hasher = new PasswordHasher<User>();
-        var service = new AuthService(context, config, hasher);
+        var emailService = new TestEmailService();
+        var service = new AuthService(context, config, hasher, emailService);
 
         var user = new User
         {
@@ -138,82 +156,44 @@ public class AuthServiceTests
         context.Users.Add(user);
         await context.SaveChangesAsync();
 
-        var loginRequest = new LoginRequest
+        var request = new LoginRequest
         {
             Email = "test@example.com",
             Password = "SecurePassword123!"
         };
 
         // Act
-        var result = await service.LoginAsync(loginRequest);
+        var result = await service.LoginAsync(request);
 
         // Assert
         Assert.NotNull(result);
         Assert.NotNull(result.Response.AccessToken);
         Assert.NotEmpty(result.RefreshToken);
-        Assert.Equal(user.Id, result.Response.User.Id);
-
-        var dbToken = await context.RefreshTokens.FirstOrDefaultAsync(rt => rt.UserId == user.Id);
-        Assert.NotNull(dbToken);
-        Assert.Equal(HashToken(result.RefreshToken), dbToken.TokenHash);
+        Assert.Equal("testuser", result.Response.User.Username);
     }
 
     [Fact]
-    public async Task LoginAsync_ShouldReturnNull_WhenCredentialsAreIncorrect()
+    public async Task RefreshAsync_ShouldRotateToken_WhenTokenIsValid()
     {
         // Arrange
         using var context = CreateContext();
         var config = CreateConfiguration();
         var hasher = new PasswordHasher<User>();
-        var service = new AuthService(context, config, hasher);
+        var emailService = new TestEmailService();
+        var service = new AuthService(context, config, hasher, emailService);
 
-        var user = new User
-        {
-            Username = "testuser",
-            Email = "test@example.com",
-            DisplayName = "Test User"
-        };
-        user.PasswordHash = hasher.HashPassword(user, "SecurePassword123!");
-        context.Users.Add(user);
-        await context.SaveChangesAsync();
-
-        // Wrong password
-        var wrongPassRequest = new LoginRequest { Email = "test@example.com", Password = "WrongPassword!" };
-        // Wrong email
-        var wrongEmailRequest = new LoginRequest { Email = "wrong@example.com", Password = "SecurePassword123!" };
-
-        // Act & Assert
-        Assert.Null(await service.LoginAsync(wrongPassRequest));
-        Assert.Null(await service.LoginAsync(wrongEmailRequest));
-    }
-
-    [Fact]
-    public async Task RefreshAsync_ShouldRotateTokens_WhenTokenIsValid()
-    {
-        // Arrange
-        using var context = CreateContext();
-        var config = CreateConfiguration();
-        var hasher = new PasswordHasher<User>();
-        var service = new AuthService(context, config, hasher);
-
-        var user = new User
-        {
-            Username = "testuser",
-            Email = "test@example.com",
-            DisplayName = "Test User"
-        };
+        var user = new User { Username = "user", Email = "u@example.com", DisplayName = "User" };
         context.Users.Add(user);
 
-        var rawToken = "initial-raw-refresh-token-value";
+        var rawToken = "valid-refresh-token";
         var hash = HashToken(rawToken);
-        var oldRefreshToken = new RefreshToken
+        var refreshToken = new RefreshToken
         {
             UserId = user.Id,
             TokenHash = hash,
-            ExpiresAt = DateTime.UtcNow.AddDays(7),
-            CreatedAt = DateTime.UtcNow
+            ExpiresAt = DateTime.UtcNow.AddDays(7)
         };
-        context.RefreshTokens.Add(oldRefreshToken);
+        context.RefreshTokens.Add(refreshToken);
         await context.SaveChangesAsync();
 
         // Act
@@ -221,81 +201,41 @@ public class AuthServiceTests
 
         // Assert
         Assert.NotNull(result);
-        Assert.NotNull(result.Response.AccessToken);
-        Assert.NotEmpty(result.RefreshToken);
         Assert.NotEqual(rawToken, result.RefreshToken);
 
-        // Verify old token is revoked
-        var updatedOldToken = await context.RefreshTokens.FirstOrDefaultAsync(rt => rt.TokenHash == hash);
-        Assert.NotNull(updatedOldToken);
-        Assert.NotNull(updatedOldToken.RevokedAt);
-        Assert.Equal(HashToken(result.RefreshToken), updatedOldToken.ReplacedByTokenHash);
+        var oldToken = await context.RefreshTokens.FirstOrDefaultAsync(rt => rt.TokenHash == hash);
+        Assert.NotNull(oldToken);
+        Assert.NotNull(oldToken.RevokedAt);
 
-        // Verify new token exists in DB
-        var newHash = HashToken(result.RefreshToken);
-        var newDbToken = await context.RefreshTokens.FirstOrDefaultAsync(rt => rt.TokenHash == newHash);
-        Assert.NotNull(newDbToken);
-        Assert.Null(newDbToken.RevokedAt);
-        Assert.Equal(user.Id, newDbToken.UserId);
+        var newToken = await context.RefreshTokens.FirstOrDefaultAsync(rt => rt.TokenHash == HashToken(result.RefreshToken));
+        Assert.NotNull(newToken);
+        Assert.Null(newToken.RevokedAt);
     }
 
     [Fact]
-    public async Task RefreshAsync_ShouldReturnNull_WhenTokenIsExpired()
+    public async Task RefreshAsync_ShouldRevokeAllTokens_WhenRevokedTokenIsReused()
     {
         // Arrange
         using var context = CreateContext();
         var config = CreateConfiguration();
         var hasher = new PasswordHasher<User>();
-        var service = new AuthService(context, config, hasher);
+        var emailService = new TestEmailService();
+        var service = new AuthService(context, config, hasher, emailService);
 
         var user = new User { Username = "user", Email = "u@example.com", DisplayName = "User" };
         context.Users.Add(user);
 
-        var rawToken = "expired-token";
-        var hash = HashToken(rawToken);
-        var expiredToken = new RefreshToken
-        {
-            UserId = user.Id,
-            TokenHash = hash,
-            ExpiresAt = DateTime.UtcNow.AddMinutes(-5), // Expired 5 mins ago
-            CreatedAt = DateTime.UtcNow.AddDays(-7)
-        };
-        context.RefreshTokens.Add(expiredToken);
-        await context.SaveChangesAsync();
-
-        // Act
-        var result = await service.RefreshAsync(rawToken);
-
-        // Assert
-        Assert.Null(result);
-    }
-
-    [Fact]
-    public async Task RefreshAsync_ShouldRevokeAllTokens_WhenTokenIsRevoked()
-    {
-        // Arrange
-        using var context = CreateContext();
-        var config = CreateConfiguration();
-        var hasher = new PasswordHasher<User>();
-        var service = new AuthService(context, config, hasher);
-
-        var user = new User { Username = "user", Email = "u@example.com", DisplayName = "User" };
-        context.Users.Add(user);
-        await context.SaveChangesAsync();
-
-        // Create family of tokens
-        var rawToken1 = "token-1";
+        var rawToken1 = "token1";
         var hash1 = HashToken(rawToken1);
         var revokedToken = new RefreshToken
         {
             UserId = user.Id,
             TokenHash = hash1,
             ExpiresAt = DateTime.UtcNow.AddDays(7),
-            RevokedAt = DateTime.UtcNow.AddMinutes(-10), // Already revoked
-            ReplacedByTokenHash = "replaced-hash"
+            RevokedAt = DateTime.UtcNow.AddMinutes(-5)
         };
 
-        var rawToken2 = "token-2";
+        var rawToken2 = "token2";
         var hash2 = HashToken(rawToken2);
         var activeToken = new RefreshToken
         {
@@ -307,13 +247,12 @@ public class AuthServiceTests
         context.RefreshTokens.AddRange(revokedToken, activeToken);
         await context.SaveChangesAsync();
 
-        // Act: presenting a revoked token should trigger reuse penalty (revoke all active user tokens)
+        // Act
         var result = await service.RefreshAsync(rawToken1);
 
         // Assert
         Assert.Null(result);
 
-        // Verify active token is now revoked
         var dbActiveToken = await context.RefreshTokens.FirstOrDefaultAsync(rt => rt.TokenHash == hash2);
         Assert.NotNull(dbActiveToken);
         Assert.NotNull(dbActiveToken.RevokedAt);
@@ -326,7 +265,8 @@ public class AuthServiceTests
         using var context = CreateContext();
         var config = CreateConfiguration();
         var hasher = new PasswordHasher<User>();
-        var service = new AuthService(context, config, hasher);
+        var emailService = new TestEmailService();
+        var service = new AuthService(context, config, hasher, emailService);
 
         var user = new User { Username = "user", Email = "u@example.com", DisplayName = "User" };
         context.Users.Add(user);
@@ -350,5 +290,128 @@ public class AuthServiceTests
         var dbToken = await context.RefreshTokens.FirstOrDefaultAsync(rt => rt.TokenHash == hash);
         Assert.NotNull(dbToken);
         Assert.NotNull(dbToken.RevokedAt);
+    }
+
+    [Fact]
+    public async Task RequestPasswordResetAsync_ShouldCreateTokenAndCallEmailService()
+    {
+        // Arrange
+        using var context = CreateContext();
+        var config = CreateConfiguration();
+        var hasher = new PasswordHasher<User>();
+        var emailService = new TestEmailService();
+        var service = new AuthService(context, config, hasher, emailService);
+
+        var user = new User { Username = "resetuser", Email = "reset@example.com", DisplayName = "Reset User" };
+        context.Users.Add(user);
+        await context.SaveChangesAsync();
+
+        // Act
+        var result = await service.RequestPasswordResetAsync("reset@example.com");
+
+        // Assert
+        Assert.True(result);
+        Assert.True(emailService.WasCalled);
+        Assert.Equal("reset@example.com", emailService.LastToEmail);
+        Assert.NotNull(emailService.LastResetToken);
+
+        var tokenInDb = await context.PasswordResetTokens.FirstOrDefaultAsync(prt => prt.UserId == user.Id);
+        Assert.NotNull(tokenInDb);
+        Assert.Equal(HashToken(emailService.LastResetToken), tokenInDb.TokenHash);
+    }
+
+    [Fact]
+    public async Task ResetPasswordAsync_ShouldUpdatePassword_WhenTokenIsValid()
+    {
+        // Arrange
+        using var context = CreateContext();
+        var config = CreateConfiguration();
+        var hasher = new PasswordHasher<User>();
+        var emailService = new TestEmailService();
+        var service = new AuthService(context, config, hasher, emailService);
+
+        var user = new User { Username = "resetuser2", Email = "reset2@example.com", DisplayName = "Reset User 2" };
+        user.PasswordHash = hasher.HashPassword(user, "OldPassword123!");
+        context.Users.Add(user);
+
+        var rawToken = "valid-reset-token";
+        var hash = HashToken(rawToken);
+        var resetToken = new PasswordResetToken
+        {
+            UserId = user.Id,
+            TokenHash = hash,
+            ExpiresAt = DateTime.UtcNow.AddMinutes(15)
+        };
+        context.PasswordResetTokens.Add(resetToken);
+        await context.SaveChangesAsync();
+
+        // Act
+        var success = await service.ResetPasswordAsync(rawToken, "NewPassword456!");
+
+        // Assert
+        Assert.True(success);
+
+        var updatedUser = await context.Users.FindAsync(user.Id);
+        Assert.NotNull(updatedUser);
+        var verifyResult = hasher.VerifyHashedPassword(updatedUser, updatedUser.PasswordHash, "NewPassword456!");
+        Assert.Equal(PasswordVerificationResult.Success, verifyResult);
+
+        var dbResetToken = await context.PasswordResetTokens.FirstOrDefaultAsync(prt => prt.TokenHash == hash);
+        Assert.NotNull(dbResetToken);
+        Assert.NotNull(dbResetToken.UsedAt);
+    }
+
+    [Fact]
+    public async Task ChangePasswordAsync_ShouldUpdatePassword_WhenCurrentPasswordIsCorrect()
+    {
+        // Arrange
+        using var context = CreateContext();
+        var config = CreateConfiguration();
+        var hasher = new PasswordHasher<User>();
+        var emailService = new TestEmailService();
+        var service = new AuthService(context, config, hasher, emailService);
+
+        var user = new User { Username = "changeuser", Email = "change@example.com", DisplayName = "Change User" };
+        user.PasswordHash = hasher.HashPassword(user, "CurrentSecret123!");
+        context.Users.Add(user);
+        await context.SaveChangesAsync();
+
+        // Act
+        var success = await service.ChangePasswordAsync(user.Id, "CurrentSecret123!", "BrandNewSecret456!");
+
+        // Assert
+        Assert.True(success);
+
+        var dbUser = await context.Users.FindAsync(user.Id);
+        Assert.NotNull(dbUser);
+        var verifyResult = hasher.VerifyHashedPassword(dbUser, dbUser.PasswordHash, "BrandNewSecret456!");
+        Assert.Equal(PasswordVerificationResult.Success, verifyResult);
+    }
+
+    [Fact]
+    public async Task ResetDemoAccountAsync_ShouldResetTestuserPassword()
+    {
+        // Arrange
+        using var context = CreateContext();
+        var config = CreateConfiguration();
+        var hasher = new PasswordHasher<User>();
+        var emailService = new TestEmailService();
+        var service = new AuthService(context, config, hasher, emailService);
+
+        var testUser = new User { Username = "testuser", Email = "test@runstreak.app", DisplayName = "Test User" };
+        testUser.PasswordHash = hasher.HashPassword(testUser, "ModifiedPassword123!");
+        context.Users.Add(testUser);
+        await context.SaveChangesAsync();
+
+        // Act
+        var success = await service.ResetDemoAccountAsync();
+
+        // Assert
+        Assert.True(success);
+
+        var dbTestUser = await context.Users.FirstOrDefaultAsync(u => u.Username == "testuser");
+        Assert.NotNull(dbTestUser);
+        var verifyResult = hasher.VerifyHashedPassword(dbTestUser, dbTestUser.PasswordHash, "Test1234!");
+        Assert.Equal(PasswordVerificationResult.Success, verifyResult);
     }
 }

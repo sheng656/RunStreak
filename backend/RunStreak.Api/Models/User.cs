@@ -28,4 +28,5 @@ public class User
     public ICollection<UserBadge> UserBadges { get; set; } = [];
     public ICollection<RefreshToken> RefreshTokens { get; set; } = [];
     public ICollection<StreakFreeze> StreakFreezes { get; set; } = [];
+    public ICollection<PasswordResetToken> PasswordResetTokens { get; set; } = [];
 }

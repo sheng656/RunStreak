@@ -5,6 +5,7 @@ import { useAuthStore } from '../stores/authStore'
 import authApi from '../api/auth'
 import { setStoredRefreshToken } from '../api/client'
 import toast from 'react-hot-toast'
+import AppShowcase from '../components/ui/AppShowcase'
 
 export default function RegisterPage() {
   const navigate = useNavigate()
@@ -23,7 +24,6 @@ export default function RegisterPage() {
 
   function updateField(field: string, value: string) {
     setForm((prev) => ({ ...prev, [field]: value }))
-    // Clear field error on change
     if (errors[field]) {
       setErrors((prev) => {
         const next = { ...prev }
@@ -75,7 +75,6 @@ export default function RegisterPage() {
     } catch (err: unknown) {
       const data = (err as { response?: { data?: { message?: string; errors?: Record<string, string[]> } } })?.response?.data
       if (data?.errors) {
-        // Map backend validation errors to field errors
         const fieldErrors: Record<string, string> = {}
         for (const [key, msgs] of Object.entries(data.errors)) {
           fieldErrors[key.charAt(0).toLowerCase() + key.slice(1)] = msgs[0]
@@ -89,136 +88,144 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[hsl(var(--color-bg))] px-4 py-8">
-      <div className="w-full max-w-sm animate-fade-in-up">
-        {/* Brand header */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl gradient-fire mb-4">
-            <Flame size={28} className="text-white" />
-          </div>
-          <h1 className="text-2xl font-bold gradient-text">Join RunStreak</h1>
-          <p className="text-sm text-[hsl(var(--color-text-muted))] mt-1">
-            Start building your running streak today
-          </p>
+    <div className="min-h-screen bg-[hsl(var(--color-bg))] flex items-center justify-center p-4 md:p-8">
+      <div className="w-full max-w-5xl grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+        {/* Left Column — Showcase Carousel (Desktop) */}
+        <div className="hidden md:flex flex-col items-center justify-center border-r border-slate-800/80 pr-8">
+          <AppShowcase />
         </div>
 
-        {/* Register form */}
-        <form onSubmit={handleSubmit} className="card p-6 space-y-4">
-          {/* Username */}
-          <div>
-            <label htmlFor="reg-username" className="label">Username</label>
-            <div className="relative">
-              <User size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[hsl(var(--color-text-muted))]" />
+        {/* Right Column — Register Form */}
+        <div className="w-full max-w-md mx-auto animate-fade-in-up">
+          {/* Brand header */}
+          <div className="text-center mb-6">
+            <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl gradient-fire mb-3 shadow-lg">
+              <Flame size={28} className="text-white" />
+            </div>
+            <h1 className="text-2xl font-bold gradient-text">Join RunStreak</h1>
+            <p className="text-sm text-[hsl(var(--color-text-muted))] mt-1">
+              Start building your running streak today
+            </p>
+          </div>
+
+          {/* Register form */}
+          <form onSubmit={handleSubmit} className="card p-6 space-y-4 shadow-xl">
+            {/* Username */}
+            <div>
+              <label htmlFor="reg-username" className="label">Username</label>
+              <div className="relative">
+                <User size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[hsl(var(--color-text-muted))]" />
+                <input
+                  id="reg-username"
+                  type="text"
+                  value={form.username}
+                  onChange={(e) => updateField('username', e.target.value)}
+                  placeholder="runner42"
+                  className={`input pl-9 ${errors.username ? 'input-error' : ''}`}
+                  autoComplete="username"
+                />
+              </div>
+              {errors.username && <p className="error-text mt-1">{errors.username}</p>}
+            </div>
+
+            {/* Display name */}
+            <div>
+              <label htmlFor="reg-display-name" className="label">Display Name</label>
               <input
-                id="reg-username"
+                id="reg-display-name"
                 type="text"
-                value={form.username}
-                onChange={(e) => updateField('username', e.target.value)}
-                placeholder="runner42"
-                className={`input pl-9 ${errors.username ? 'input-error' : ''}`}
-                autoComplete="username"
+                value={form.displayName}
+                onChange={(e) => updateField('displayName', e.target.value)}
+                placeholder="Jane Runner"
+                className={`input ${errors.displayName ? 'input-error' : ''}`}
               />
+              {errors.displayName && <p className="error-text mt-1">{errors.displayName}</p>}
             </div>
-            {errors.username && <p className="error-text">{errors.username}</p>}
-          </div>
 
-          {/* Display name */}
-          <div>
-            <label htmlFor="reg-display-name" className="label">Display Name</label>
-            <input
-              id="reg-display-name"
-              type="text"
-              value={form.displayName}
-              onChange={(e) => updateField('displayName', e.target.value)}
-              placeholder="Jane Runner"
-              className={`input ${errors.displayName ? 'input-error' : ''}`}
-            />
-            {errors.displayName && <p className="error-text">{errors.displayName}</p>}
-          </div>
-
-          {/* Email */}
-          <div>
-            <label htmlFor="reg-email" className="label">Email</label>
-            <div className="relative">
-              <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[hsl(var(--color-text-muted))]" />
-              <input
-                id="reg-email"
-                type="email"
-                value={form.email}
-                onChange={(e) => updateField('email', e.target.value)}
-                placeholder="you@example.com"
-                className={`input pl-9 ${errors.email ? 'input-error' : ''}`}
-                autoComplete="email"
-              />
+            {/* Email */}
+            <div>
+              <label htmlFor="reg-email" className="label">Email</label>
+              <div className="relative">
+                <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[hsl(var(--color-text-muted))]" />
+                <input
+                  id="reg-email"
+                  type="email"
+                  value={form.email}
+                  onChange={(e) => updateField('email', e.target.value)}
+                  placeholder="you@example.com"
+                  className={`input pl-9 ${errors.email ? 'input-error' : ''}`}
+                  autoComplete="email"
+                />
+              </div>
+              {errors.email && <p className="error-text mt-1">{errors.email}</p>}
             </div>
-            {errors.email && <p className="error-text">{errors.email}</p>}
-          </div>
 
-          {/* Password */}
-          <div>
-            <label htmlFor="reg-password" className="label">Password</label>
-            <div className="relative">
-              <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[hsl(var(--color-text-muted))]" />
-              <input
-                id="reg-password"
-                type={showPassword ? 'text' : 'password'}
-                value={form.password}
-                onChange={(e) => updateField('password', e.target.value)}
-                placeholder="At least 8 characters"
-                className={`input pl-9 pr-10 ${errors.password ? 'input-error' : ''}`}
-                autoComplete="new-password"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-[hsl(var(--color-text-muted))] hover:text-[hsl(var(--color-text))]"
-                tabIndex={-1}
-              >
-                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-              </button>
+            {/* Password */}
+            <div>
+              <label htmlFor="reg-password" className="label">Password</label>
+              <div className="relative">
+                <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[hsl(var(--color-text-muted))]" />
+                <input
+                  id="reg-password"
+                  type={showPassword ? 'text' : 'password'}
+                  value={form.password}
+                  onChange={(e) => updateField('password', e.target.value)}
+                  placeholder="At least 8 characters"
+                  className={`input pl-9 pr-10 ${errors.password ? 'input-error' : ''}`}
+                  autoComplete="new-password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[hsl(var(--color-text-muted))] hover:text-[hsl(var(--color-text))]"
+                  tabIndex={-1}
+                >
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+              {errors.password && <p className="error-text mt-1">{errors.password}</p>}
             </div>
-            {errors.password && <p className="error-text">{errors.password}</p>}
-          </div>
 
-          {/* Confirm password */}
-          <div>
-            <label htmlFor="reg-confirm" className="label">Confirm Password</label>
-            <div className="relative">
-              <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[hsl(var(--color-text-muted))]" />
-              <input
-                id="reg-confirm"
-                type={showPassword ? 'text' : 'password'}
-                value={form.confirmPassword}
-                onChange={(e) => updateField('confirmPassword', e.target.value)}
-                placeholder="Repeat your password"
-                className={`input pl-9 ${errors.confirmPassword ? 'input-error' : ''}`}
-                autoComplete="new-password"
-              />
+            {/* Confirm password */}
+            <div>
+              <label htmlFor="reg-confirm" className="label">Confirm Password</label>
+              <div className="relative">
+                <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[hsl(var(--color-text-muted))]" />
+                <input
+                  id="reg-confirm"
+                  type={showPassword ? 'text' : 'password'}
+                  value={form.confirmPassword}
+                  onChange={(e) => updateField('confirmPassword', e.target.value)}
+                  placeholder="Repeat your password"
+                  className={`input pl-9 ${errors.confirmPassword ? 'input-error' : ''}`}
+                  autoComplete="new-password"
+                />
+              </div>
+              {errors.confirmPassword && <p className="error-text mt-1">{errors.confirmPassword}</p>}
             </div>
-            {errors.confirmPassword && <p className="error-text">{errors.confirmPassword}</p>}
-          </div>
 
-          {/* Submit */}
-          <button
-            type="submit"
-            disabled={submitting}
-            className="btn btn-fire w-full btn-lg"
-          >
-            {submitting ? (
-              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-            ) : (
-              'Create Account'
-            )}
-          </button>
-        </form>
+            {/* Submit */}
+            <button
+              type="submit"
+              disabled={submitting}
+              className="btn btn-fire w-full btn-lg mt-2"
+            >
+              {submitting ? (
+                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              ) : (
+                'Create Account'
+              )}
+            </button>
+          </form>
 
-        {/* Login link */}
-        <p className="text-center text-sm text-[hsl(var(--color-text-muted))] mt-6">
-          Already have an account?{' '}
-          <Link to="/login" className="font-medium text-[hsl(var(--color-brand))] hover:underline">
-            Sign in
-          </Link>
-        </p>
+          {/* Login link */}
+          <p className="text-center text-sm text-[hsl(var(--color-text-muted))] mt-6">
+            Already have an account?{' '}
+            <Link to="/login" className="font-medium text-[hsl(var(--color-brand))] hover:underline">
+              Sign in
+            </Link>
+          </p>
+        </div>
       </div>
     </div>
   )

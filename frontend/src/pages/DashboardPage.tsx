@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
   Flame, Trophy, MapPin, TrendingUp, Plus,
-  Medal, Zap, CalendarDays, Shield, X, AlertCircle,
+  Medal, Zap, CalendarDays, Shield, X, AlertCircle, Share2,
 } from 'lucide-react'
 import { useAuthStore } from '../stores/authStore'
 import { useGamificationStore } from '../stores/gamificationStore'
@@ -17,6 +17,7 @@ import WeeklyProgress from '../components/ui/WeeklyProgress'
 import MotivationalInsight from '../components/ui/MotivationalInsight'
 import PersonalRecords from '../components/ui/PersonalRecords'
 import ActiveChallengeWidget from '../components/ui/ActiveChallengeWidget'
+import ShareCard from '../components/ui/ShareCard'
 import toast from 'react-hot-toast'
 import type { Run, UserBadge, UserStats, BadgeWithProgress } from '../types/api'
 
@@ -30,6 +31,7 @@ export default function DashboardPage() {
   const [stats, setStats] = useState<UserStats | null>(null)
   const [badgesWithProgress, setBadgesWithProgress] = useState<BadgeWithProgress[]>([])
   const [loading, setLoading] = useState(true)
+  const [showShareModal, setShowShareModal] = useState(false)
   const [purchasing, setPurchasing] = useState(false)
   const [showPurchaseConfirm, setShowPurchaseConfirm] = useState(false)
 
@@ -152,10 +154,20 @@ export default function DashboardPage() {
                 )}
               </div>
             </div>
-            <Link to="/runs/new" className="btn btn-fire btn-lg shrink-0">
-              <Plus size={18} />
-              Log a Run
-            </Link>
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={() => setShowShareModal(true)}
+                className="btn btn-secondary btn-lg flex items-center gap-1.5"
+              >
+                <Share2 size={18} />
+                <span>Share Stats</span>
+              </button>
+              <Link to="/runs/new" className="btn btn-fire btn-lg shrink-0">
+                <Plus size={18} />
+                Log a Run
+              </Link>
+            </div>
           </div>
 
           {/* Streak display */}
@@ -458,6 +470,15 @@ export default function DashboardPage() {
             </div>
           </div>
         </div>
+      )}
+      {/* Share Stats Modal */}
+      {showShareModal && user && (
+        <ShareCard
+          variant="profile"
+          user={user}
+          stats={stats}
+          onClose={() => setShowShareModal(false)}
+        />
       )}
     </div>
   )

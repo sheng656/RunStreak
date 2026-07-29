@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { Trophy, ChevronRight, Zap, Sparkles } from 'lucide-react'
+import { Trophy, ChevronRight, Zap, Sparkles, Share2 } from 'lucide-react'
 import type { Badge } from '../types/api'
+import ShareCard from '../components/ui/ShareCard'
 import confetti from 'canvas-confetti' // Optional, but let's implement a CSS particle/confetti effect if canvas-confetti isn't installed. Wait, can we install canvas-confetti or build CSS sparkles? Building CSS sparkles/confetti using Tailwind & CSS is completely zero-dependency and safe!
 
 // Rarity color configurations for themes, text, glow shadows and gradients.
@@ -57,6 +58,7 @@ export default function BadgeCelebrationPage() {
 
   const [currentIndex, setCurrentIndex] = useState(0)
   const [animate, setAnimate] = useState(false)
+  const [showShareCard, setShowShareCard] = useState(false)
 
   // Redirect if no badges passed to prevent blank screen
   useEffect(() => {
@@ -165,7 +167,15 @@ export default function BadgeCelebrationPage() {
         </div>
 
         {/* Navigation Actions */}
-        <div className="pt-4">
+        <div className="pt-4 space-y-3">
+          <button
+            onClick={() => setShowShareCard(true)}
+            className="btn w-full py-3 px-6 rounded-xl flex items-center justify-center gap-2 text-sm font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition-all"
+          >
+            <Share2 size={16} />
+            <span>Share Badge</span>
+          </button>
+
           <button
             onClick={handleNext}
             className={`btn w-full py-3.5 px-6 rounded-xl flex items-center justify-center gap-2 text-base font-bold shadow-lg transition-all duration-300 transform active:scale-95 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white`}
@@ -175,6 +185,21 @@ export default function BadgeCelebrationPage() {
           </button>
         </div>
       </div>
+
+      {showShareCard && (
+        <ShareCard
+          variant="badge"
+          badge={{
+            ...currentBadge,
+            isUnlocked: true,
+            unlockedAt: new Date().toISOString(),
+            currentProgress: currentBadge.pointsReward,
+            targetThreshold: currentBadge.pointsReward,
+            progressLabel: 'Unlocked!',
+          }}
+          onClose={() => setShowShareCard(false)}
+        />
+      )}
     </div>
   )
 }

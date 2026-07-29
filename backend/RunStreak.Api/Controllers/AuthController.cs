@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.WebUtilities;
 using RunStreak.Api.DTOs.Auth;
 using RunStreak.Api.Services;
+using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
 
@@ -110,6 +111,74 @@ public class AuthController : ControllerBase
         }
 
         return NoContent();
+    }
+
+    [HttpPost("forgot-password")]
+    [EnableRateLimiting("login")]
+    public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request)
+    {
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
+
+        await _authService.RequestPasswordResetAsync(request.Email);
+        return Ok(new { message = "If your email is registered, you will receive a password reset link shortly." });
+    }
+
+    [HttpPost("reset-password")]
+    [EnableRateLimiting("login")]
+    public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request)
+    {
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
+
+        var success = await _authService.ResetPasswordAsync(request.Token, request.NewPassword);
+        if (!success)
+        {
+            return BadRequest(new { message = "Invalid or expired password reset token." });
+        }
+
+        return Ok(new { message = "Password reset successfully. You can now log in with your new password." });
+    }
+
+    [HttpPost("change-password")]
+    [Microsoft.AspNetCore.Authorization.Authorize]
+    public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
+    {
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
+
+        var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (!Guid.TryParse(userIdString, out var userId))
+        {
+            return Unauthorized(new { message = "Invalid user credentials." });
+        }
+
+        var success = await _authService.ChangePasswordAsync(userId, request.CurrentPassword, request.NewPassword);
+        if (!success)
+        {
+            return BadRequest(new { message = "Incorrect current password." });
+        }
+
+        return Ok(new { message = "Password updated successfully. All active sessions have been logged out." });
+    }
+
+    [HttpPost("reset-demo")]
+    [EnableRateLimiting("login")]
+    public async Task<IActionResult> ResetDemoAccount()
+    {
+        var success = await _authService.ResetDemoAccountAsync();
+        if (!success)
+        {
+            return BadRequest(new { message = "Demo account not found." });
+        }
+
+        return Ok(new { message = "Demo account password has been reset to Test1234!." });
     }
 
     private async Task<string?> ReadRefreshTokenFromRequestAsync()

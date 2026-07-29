@@ -17,6 +17,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<StreakFreeze> StreakFreezes => Set<StreakFreeze>();
     public DbSet<Challenge> Challenges => Set<Challenge>();
     public DbSet<UserChallenge> UserChallenges => Set<UserChallenge>();
+    public DbSet<PasswordResetToken> PasswordResetTokens => Set<PasswordResetToken>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -156,6 +157,21 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             entity.HasOne(uc => uc.Challenge)
                 .WithMany(c => c.UserChallenges)
                 .HasForeignKey(uc => uc.ChallengeId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // ── PasswordResetTokens ─────────────────────────────────────────────
+        modelBuilder.Entity<PasswordResetToken>(entity =>
+        {
+            entity.HasKey(prt => prt.Id);
+            entity.HasIndex(prt => prt.TokenHash).IsUnique();
+            entity.HasIndex(prt => prt.UserId);
+
+            entity.Property(prt => prt.TokenHash).IsRequired();
+
+            entity.HasOne(prt => prt.User)
+                .WithMany(u => u.PasswordResetTokens)
+                .HasForeignKey(prt => prt.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
     }

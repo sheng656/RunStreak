@@ -23,6 +23,18 @@ const authApi = {
         },
       },
     ),
+
+  forgotPassword: (email: string) =>
+    apiClient.post<{ message: string }>('/auth/forgot-password', { email }),
+
+  resetPassword: (token: string, newPassword: string) =>
+    apiClient.post<{ message: string }>('/auth/reset-password', { token, newPassword }),
+
+  changePassword: (currentPassword: string, newPassword: string) =>
+    apiClient.post<{ message: string }>('/auth/change-password', { currentPassword, newPassword }),
+
+  resetDemo: () =>
+    apiClient.post<{ message: string }>('/auth/reset-demo'),
 }
 
 export default authApi

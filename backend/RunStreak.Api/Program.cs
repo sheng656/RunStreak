@@ -25,6 +25,8 @@ builder.Services.AddScoped<IStreakFreezeService, StreakFreezeService>();
 builder.Services.AddScoped<IChallengeService, ChallengeService>();
 // AI screenshot import via Google Gemini (Google.GenAI + Microsoft.Extensions.AI)
 builder.Services.AddScoped<IScreenshotImportService, ScreenshotImportService>();
+// Resend email service for transactional emails (password reset)
+builder.Services.AddHttpClient<IEmailService, ResendEmailService>();
 
 // ─── Controllers ────────────────────────────────────────────────────────────
 builder.Services.AddControllers();

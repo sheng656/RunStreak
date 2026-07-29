@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
-import { Medal, Trophy, Star, MapPin, Flame, Award, Lock, Sparkles } from 'lucide-react'
+import { Medal, Trophy, Star, MapPin, Flame, Award, Lock, Sparkles, Share2 } from 'lucide-react'
 import usersApi from '../api/users'
 import LoadingSpinner from '../components/ui/LoadingSpinner'
 import EmptyState from '../components/ui/EmptyState'
+import ShareCard from '../components/ui/ShareCard'
 import type { BadgeWithProgress, BadgeRarity } from '../types/api'
 
 const categoryIcons: Record<string, typeof Trophy> = {
@@ -55,6 +56,7 @@ export default function BadgesPage() {
   const [loading, setLoading] = useState(true)
   const [activeCategory, setActiveCategory] = useState<string>('all')
   const [activeRarity, setActiveRarity] = useState<string>('all')
+  const [selectedBadgeForShare, setSelectedBadgeForShare] = useState<BadgeWithProgress | null>(null)
 
   useEffect(() => {
     async function load() {
@@ -224,10 +226,20 @@ export default function BadgesPage() {
                           </div>
                         )}
 
-                        {/* Unlocked Sparkle Indicator */}
+                        {/* Unlocked Sparkle Indicator & Share Button */}
                         {badge.isUnlocked && (
-                          <div className="absolute top-3 right-3 text-emerald-500" title="Unlocked">
-                            <Sparkles size={14} className="animate-pulse" />
+                          <div className="absolute top-3 right-3 flex items-center gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => setSelectedBadgeForShare(badge)}
+                              className="p-1 rounded-md bg-slate-800/80 hover:bg-slate-700 text-slate-300 transition-colors"
+                              title="Share Badge Card"
+                            >
+                              <Share2 size={13} />
+                            </button>
+                            <span title="Unlocked">
+                              <Sparkles size={14} className="text-emerald-500 animate-pulse" />
+                            </span>
                           </div>
                         )}
 
@@ -299,6 +311,14 @@ export default function BadgesPage() {
             )
           })}
         </div>
+      )}
+      {/* Share Badge Modal */}
+      {selectedBadgeForShare && (
+        <ShareCard
+          variant="badge"
+          badge={selectedBadgeForShare}
+          onClose={() => setSelectedBadgeForShare(null)}
+        />
       )}
     </div>
   )

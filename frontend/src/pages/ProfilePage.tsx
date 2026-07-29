@@ -5,6 +5,7 @@ import {
 } from 'lucide-react'
 import { useAuthStore } from '../stores/authStore'
 import usersApi from '../api/users'
+import authApi from '../api/auth'
 import StatCard from '../components/ui/StatCard'
 import ThemeToggle from '../components/ui/ThemeToggle'
 import LoadingSpinner from '../components/ui/LoadingSpinner'
@@ -178,6 +179,9 @@ export default function ProfilePage() {
         </div>
       ) : null}
 
+      {/* Security & Password */}
+      <SecuritySection />
+
       {/* Theme setting */}
       <div className="card p-5">
         <h2 className="font-semibold text-[hsl(var(--color-text))] mb-3">Appearance</h2>
@@ -189,6 +193,127 @@ export default function ProfilePage() {
           <ThemeToggle />
         </div>
       </div>
+    </div>
+  )
+}
+
+function SecuritySection() {
+  const { clearAuth } = useAuthStore()
+  const [open, setOpen] = useState(false)
+  const [currentPassword, setCurrentPassword] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+  const [errors, setErrors] = useState<Record<string, string>>({})
+
+  async function handleChangePassword(e: FormEvent) {
+    e.preventDefault()
+    const errs: Record<string, string> = {}
+    if (!currentPassword) errs.currentPassword = 'Current password is required'
+    if (!newPassword) errs.newPassword = 'New password is required'
+    else if (newPassword.length < 8) errs.newPassword = 'Password must be at least 8 characters'
+    if (newPassword !== confirmPassword) errs.confirmPassword = 'Passwords do not match'
+
+    setErrors(errs)
+    if (Object.keys(errs).length > 0) return
+
+    setSubmitting(true)
+    try {
+      await authApi.changePassword(currentPassword, newPassword)
+      toast.success('Password updated successfully! Please sign in with your new password.')
+      clearAuth()
+      window.location.href = '/login'
+    } catch (err: unknown) {
+      const msg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+        'Failed to change password. Check your current password.'
+      toast.error(msg)
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  return (
+    <div className="card p-5 mb-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="font-semibold text-[hsl(var(--color-text))]">Security</h2>
+          <p className="text-xs text-[hsl(var(--color-text-muted))]">Manage password and account access</p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setOpen(!open)}
+          className="btn btn-secondary btn-sm"
+        >
+          {open ? 'Hide' : 'Change Password'}
+        </button>
+      </div>
+
+      {open && (
+        <form onSubmit={handleChangePassword} className="mt-5 space-y-4 pt-4 border-t border-[hsl(var(--color-border))]/30 animate-fade-in">
+          <div>
+            <label htmlFor="current-pw" className="label font-semibold text-xs">Current Password</label>
+            <input
+              id="current-pw"
+              type="password"
+              value={currentPassword}
+              onChange={(e) => setCurrentPassword(e.target.value)}
+              className={`input ${errors.currentPassword ? 'input-error' : ''}`}
+              placeholder="••••••••"
+            />
+            {errors.currentPassword && <p className="error-text mt-1">{errors.currentPassword}</p>}
+          </div>
+
+          <div>
+            <label htmlFor="new-pw" className="label font-semibold text-xs">New Password</label>
+            <input
+              id="new-pw"
+              type="password"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              className={`input ${errors.newPassword ? 'input-error' : ''}`}
+              placeholder="At least 8 characters"
+            />
+            {errors.newPassword && <p className="error-text mt-1">{errors.newPassword}</p>}
+          </div>
+
+          <div>
+            <label htmlFor="confirm-pw" className="label font-semibold text-xs">Confirm New Password</label>
+            <input
+              id="confirm-pw"
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              className={`input ${errors.confirmPassword ? 'input-error' : ''}`}
+              placeholder="Repeat new password"
+            />
+            {errors.confirmPassword && <p className="error-text mt-1">{errors.confirmPassword}</p>}
+          </div>
+
+          <div className="flex gap-2 pt-2">
+            <button type="submit" disabled={submitting} className="btn btn-primary btn-sm">
+              {submitting ? (
+                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              ) : (
+                'Update Password'
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setOpen(false)
+                setCurrentPassword('')
+                setNewPassword('')
+                setConfirmPassword('')
+                setErrors({})
+              }}
+              className="btn btn-ghost btn-sm"
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      )}
     </div>
   )
 }
