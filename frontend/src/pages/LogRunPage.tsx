@@ -184,9 +184,9 @@ export default function LogRunPage() {
         } catch { /* non-critical */ }
       }
 
-      const newBadges: Badge[] = res.data?.newlyUnlockedBadges || []
-      const runData = res.data?.run
-      const pointsEarned = runData?.pointsEarned ?? 0
+      const newBadges: Badge[] = res.data?.newlyUnlockedBadges || (res.data as any)?.NewlyUnlockedBadges || []
+      const runData = res.data?.run || (res.data as any)?.Run
+      const pointsEarned = runData?.pointsEarned ?? (runData as any)?.PointsEarned ?? 0
 
       const newDistanceKm = parseFloat(form.distanceKm)
       const newDuration = totalMinutes

@@ -78,7 +78,9 @@ public class RunService(
                     throw new InvalidOperationException("A duplicate run with the same distance, duration, and date was logged within the last 5 minutes. Please check your history.");
                 }
 
-                // 1. Create run entity
+                // 1. Calculate initial points and create run entity
+                int initialPoints = _pointsService.CalculatePoints(request.DistanceKm, request.DurationMinutes, user.CurrentStreak);
+
                 var run = new Run
                 {
                     UserId = userId,
@@ -88,7 +90,7 @@ public class RunService(
                     Notes = request.Notes,
                     PerceivedEffort = request.PerceivedEffort,
                     PaceMinPerKm = request.DurationMinutes / request.DistanceKm,
-                    PointsEarned = 0, // Calculated after updating streak
+                    PointsEarned = initialPoints,
                     CreatedAt = DateTime.UtcNow,
                     UpdatedAt = DateTime.UtcNow
                 };
@@ -96,7 +98,7 @@ public class RunService(
                 _context.Runs.Add(run);
                 await _context.SaveChangesAsync();
 
-                // 2. Recalculate streak
+                // 2. Recalculate streak (includes the new run)
                 var streakResult = await _streakService.RecalculateStreakAsync(userId);
                 user.CurrentStreak = streakResult.CurrentStreak;
                 if (streakResult.LongestStreak > user.LongestStreak)
@@ -104,7 +106,7 @@ public class RunService(
                     user.LongestStreak = streakResult.LongestStreak;
                 }
 
-                // 3. Calculate points for this run
+                // 3. Re-calculate points for this run with updated streak (in case streak threshold is reached)
                 run.PointsEarned = _pointsService.CalculatePoints(run.DistanceKm, run.DurationMinutes, user.CurrentStreak);
                 
                 // 4. Update user denormalized stats

@@ -79,3 +79,13 @@ The homepage is fully theme-aware:
 
 ## Build result (follow-up)
 `npm run build` — zero TypeScript errors, zero warnings.
+
+---
+
+## Follow-up Prompt 4 — Orange Flame Favicon
+
+> Use the orange flame icon—the same one located above the input fields on the login screen—for the website's favicon (browser tab icon).
+
+*Agent produced:*
+- Updated [`frontend/public/favicon.svg`](file:///d:/App/RunStreak/frontend/public/favicon.svg) to render an orange-to-amber gradient rounded square containing the centered white Lucide `Flame` icon, matching the brand icon on the login screen.
+
