@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { useGamificationStore } from './gamificationStore'
-import type { LeaderboardEntry, BadgeWithProgress, ActiveChallengeSummary } from '../types/api'
+import type { LeaderboardEntry, BadgeWithProgress } from '../types/api'
 
 const mockLeaderboardEntry: LeaderboardEntry = {
   rank: 1,
@@ -28,18 +28,6 @@ const mockBadge: BadgeWithProgress = {
   currentProgress: 1,
   targetThreshold: 1,
   progressLabel: '1 / 1 runs',
-}
-
-const mockChallenge: ActiveChallengeSummary = {
-  challengeId: 'c1',
-  name: 'Rangitoto Summit',
-  description: 'Conquer Auckland volcano',
-  targetDistanceKm: 8.0,
-  progressDistanceKm: 4.0,
-  remainingDistanceKm: 4.0,
-  completionPercentage: 50,
-  iconUrl: '',
-  rarity: 'common',
 }
 
 describe('gamificationStore', () => {

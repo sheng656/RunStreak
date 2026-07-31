@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Compass, CheckCircle, Flag, MapPin, Award, ArrowRight, Trophy, AlertTriangle, X } from 'lucide-react'
+import challengesApi from '../api/challenges'
 import usersApi from '../api/users'
 import LoadingSpinner from '../components/ui/LoadingSpinner'
 import ShareCard from '../components/ui/ShareCard'
@@ -261,19 +262,20 @@ export default function ChallengesPage() {
                       Active Challenge <ArrowRight size={12} />
                     </span>
                   ) : (
-                  <button
-                    type="button"
-                    disabled={startingId === c.id}
-                    onClick={() => handleStartClick(c)}
-                    className="btn btn-secondary btn-sm text-xs"
-                  >
-                    {startingId === c.id ? (
-                      <div className="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                    ) : (
-                      'Start Challenge'
-                    )}
-                  </button>
-                )}
+                    <button
+                      type="button"
+                      disabled={startingId === c.id}
+                      onClick={() => handleStartClick(c)}
+                      className="btn btn-secondary btn-sm text-xs"
+                    >
+                      {startingId === c.id ? (
+                        <div className="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                        'Start Challenge'
+                      )}
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           )
