@@ -1,8 +1,8 @@
 # RunStreak — Project Plan (LIVE)
 
-> **Last updated:** 2026-07-29
-> **Current focus:** Phase 14 — Email Verification Code Confirmation & Test User Rename (DONE)
-> **Overall status:** ✅ Phase 0-8 complete, Phase 10-14 complete
+> **Last updated:** 2026-07-30
+> **Current focus:** Phase 15 — User Manual Creation & Live Screenshot Showcase (DONE)
+> **Overall status:** ✅ Phase 0-8 complete, Phase 10-15 complete
 
 
 This file is the single source of truth for what's done, what's in progress, and what's next. Agents must read it at the start of every session and update it at the end.
@@ -468,3 +468,15 @@ Phase 0 (scaffold)
 - [x] Updated `AuthServiceTests.cs` and `ControllerTests.cs` (40/40 tests passing)
 - [x] Created ADR `specs/decisions/015-email-verification-registration.md` and prompt log `specs/prompts/2026-07-29-email-verification-registration.md`
 
+---
+
+## Phase 15 — User Manual Creation & Live Screenshot Showcase
+
+**Goal:** Create a comprehensive user manual in Markdown format featuring live app screenshots captured autonomously via browser subagent.
+
+- [x] Autonomous browser subagent navigation to live site (`https://runstreak.sheng.nz/`)
+- [x] Auto-filled demo account sign-in (`testuser` / `Test1234!`)
+- [x] Captured 8 full-page screenshots for all major features: Landing, Dashboard, Log Run, Runs History, Badges, Route Challenges, Leaderboard, and Profile
+- [x] Copied and formatted screenshots into `docs/assets/`
+- [x] Created `USER_MANUAL.md` at repository root with detailed feature documentation, gamification mechanics walkthroughs, and inline image links
+- [x] Prompt log written: `specs/prompts/2026-07-30-user-manual-creation.md`
