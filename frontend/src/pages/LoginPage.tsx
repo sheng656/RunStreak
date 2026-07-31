@@ -15,7 +15,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
-  const [showDemoDropdown, setShowDemoDropdown] = useState(true)
+  const [showDemoDropdown, setShowDemoDropdown] = useState(false)
   const [resettingDemo, setResettingDemo] = useState(false)
   const [copied, setCopied] = useState<'user' | 'pass' | null>(null)
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -364,11 +364,39 @@ export default function LoginPage() {
                 className="btn btn-fire w-full btn-lg mt-2 shadow-lg shadow-orange-500/20"
               >
                 {submitting ? (
-                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <div className="flex items-center justify-center gap-2">
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    <span>Authenticating...</span>
+                  </div>
                 ) : (
                   'Sign In'
                 )}
               </button>
+
+              {/* Warm, friendly cold-start & demo seeding prompt */}
+              {submitting && (
+                <div className="p-3.5 rounded-xl border border-indigo-500/30 bg-indigo-950/40 space-y-1.5 text-left animate-fade-in">
+                  <div className="flex items-center gap-2 text-indigo-300 font-bold text-xs">
+                    <Sparkles size={14} className="text-amber-400 animate-pulse" />
+                    <span>
+                      {(email.trim().toLowerCase() === 'testuser' || email.trim().toLowerCase() === 'test@runstreak.app')
+                        ? 'Preparing Demo Showcase...'
+                        : 'Signing in & Syncing...'}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-300 leading-relaxed">
+                    {(email.trim().toLowerCase() === 'testuser' || email.trim().toLowerCase() === 'test@runstreak.app') ? (
+                      <>
+                        ⚡ <strong className="text-white">First login of the day?</strong> The server automatically seeds fresh activity, streaks, and badges to provide a complete showcase experience. This may take a few extra seconds on cold start!
+                      </>
+                    ) : (
+                      <>
+                        ⚡ Waking up the server & syncing your daily streak... Thanks for your patience!
+                      </>
+                    )}
+                  </p>
+                </div>
+              )}
             </form>
 
             {/* Register link */}

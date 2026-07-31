@@ -1,8 +1,8 @@
 # RunStreak — Project Plan (LIVE)
 
-> **Last updated:** 2026-07-30
-> **Current focus:** Phase 15 — User Manual Creation & Live Screenshot Showcase (DONE)
-> **Overall status:** ✅ Phase 0-8 complete, Phase 10-15 complete
+> **Last updated:** 2026-07-31
+> **Current focus:** Phase 16 — Login Modal Collapsed Dropdown & Cold-Start Seeding Prompt (DONE)
+> **Overall status:** ✅ Phase 0-8 complete, Phase 10-16 complete
 
 
 This file is the single source of truth for what's done, what's in progress, and what's next. Agents must read it at the start of every session and update it at the end.
@@ -480,3 +480,16 @@ Phase 0 (scaffold)
 - [x] Copied and formatted screenshots into `docs/assets/`
 - [x] Created `USER_MANUAL.md` at repository root with detailed feature documentation, gamification mechanics walkthroughs, and inline image links
 - [x] Prompt log written: `specs/prompts/2026-07-30-user-manual-creation.md`
+
+---
+
+## Phase 16 — Login Modal Collapsed Dropdown & Cold-Start Seeding Prompt
+
+**Goal:** Ensure the MSA Marker Demo dropdown is collapsed by default and display warm, friendly cold-start & showcase seeding prompts during login.
+
+- [x] Updated `LoginPage.tsx` so `showDemoDropdown` initializes to `false` by default
+- [x] Added warm, friendly cold-start loading status card to `LoginPage.tsx` when `submitting` is active
+- [x] Added dedicated demo showcase seeding prompt when authenticating with `testuser` / `test@runstreak.app`
+- [x] Verified frontend TypeScript compilation (`npx tsc --noEmit` passed cleanly)
+- [x] Prompt log written: `specs/prompts/2026-07-31-login-modal-seeding-prompt.md`
+
