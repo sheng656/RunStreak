@@ -1,8 +1,8 @@
 # RunStreak — Project Plan (LIVE)
 
 > **Last updated:** 2026-07-31
-> **Current focus:** Phase 16 — Login Modal Collapsed Dropdown & Cold-Start Seeding Prompt (DONE)
-> **Overall status:** ✅ Phase 0-8 complete, Phase 10-16 complete
+> **Current focus:** Phase 17 — Expanded Frontend & Backend Test Coverage (DONE)
+> **Overall status:** ✅ Phase 0-8 complete, Phase 10-17 complete
 
 
 This file is the single source of truth for what's done, what's in progress, and what's next. Agents must read it at the start of every session and update it at the end.
@@ -492,4 +492,24 @@ Phase 0 (scaffold)
 - [x] Added dedicated demo showcase seeding prompt when authenticating with `testuser` / `test@runstreak.app`
 - [x] Verified frontend TypeScript compilation (`npx tsc --noEmit` passed cleanly)
 - [x] Prompt log written: `specs/prompts/2026-07-31-login-modal-seeding-prompt.md`
+
+---
+
+## Phase 17 — Expanded Frontend & Backend Test Coverage
+
+**Goal:** Expand test coverage across key frontend components/stores and backend domain services/controllers to meet assessment rubric requirements.
+
+- [x] Backend tests: Created `ChallengeServiceTests.cs` (5 tests for route challenge progress, active switching, repeatable completions)
+- [x] Backend tests: Created `ScreenshotImportServiceTests.cs` (2 tests for API key missing & stream validation)
+- [x] Backend tests: Updated `ControllerTests.cs` (added integration tests for `ChallengesController` and `UsersController.UpdateWeeklyGoal`)
+- [x] Backend test validation: **49/49 tests passing** (`dotnet test`)
+- [x] Frontend tests: Created `runStore.test.ts` (5 tests for CRUD actions and pagination)
+- [x] Frontend tests: Created `gamificationStore.test.ts` (4 tests for leaderboard, badges, and user stats updates)
+- [x] Frontend tests: Created `WeeklyProgress.test.tsx` (2 tests for progress bar calculation and goal completion state)
+- [x] Frontend tests: Created `MotivationalInsight.test.tsx` (2 tests for streak risk and 7-day milestone messaging)
+- [x] Frontend tests: Created `ActiveChallengeWidget.test.tsx` (1 test for empty active challenge state)
+- [x] Frontend tests: Created `AvatarPicker.test.tsx` (2 tests for style selection and thumbnail callback)
+- [x] Frontend test validation: **34/34 tests passing across 10 test files** (`npm run test -- --run`)
+- [x] Prompt log written: `specs/prompts/2026-07-31-expanded-unit-test-coverage.md`
+
 

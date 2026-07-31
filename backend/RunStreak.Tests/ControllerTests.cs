@@ -257,4 +257,57 @@ public class ControllerTests : IClassFixture<WebApplicationFactory<Program>>
         // Assert
         Assert.Equal(HttpStatusCode.OK, refreshResponse.StatusCode);
     }
+
+    [Fact]
+    public async Task GetChallenges_ShouldReturnChallenges_WhenTokenIsValid()
+    {
+        // Arrange
+        var userId = Guid.NewGuid();
+        var token = GenerateTestJwtToken(userId, "challenger_user");
+        var client = _factory.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        await SeedDatabaseAsync(async context =>
+        {
+            await DbSeeder.SeedChallengesAsync(context);
+        });
+
+        // Act
+        var response = await client.GetAsync("/api/challenges");
+
+        // Assert
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var challenges = await response.Content.ReadFromJsonAsync<List<dynamic>>();
+        Assert.NotNull(challenges);
+        Assert.True(challenges.Count > 0);
+    }
+
+    [Fact]
+    public async Task UpdateWeeklyGoal_ShouldUpdateGoal_WhenTokenIsValid()
+    {
+        // Arrange
+        var userId = Guid.NewGuid();
+        var token = GenerateTestJwtToken(userId, "goal_setter");
+        var client = _factory.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        await SeedDatabaseAsync(async context =>
+        {
+            context.Users.Add(new User
+            {
+                Id = userId,
+                Username = "goal_setter",
+                Email = "goal@example.com",
+                DisplayName = "Goal Setter",
+                WeeklyGoalKm = 20.0m
+            });
+            await context.SaveChangesAsync();
+        });
+
+        // Act
+        var response = await client.PutAsJsonAsync("/api/users/me/weekly-goal", new { goalKm = 35.0m });
+
+        // Assert
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
 }
